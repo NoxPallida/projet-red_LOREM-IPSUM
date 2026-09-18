@@ -4,10 +4,6 @@ import (
 	"math/rand"
 )
 
-func RandomInt(min, max int) int {
-	return rand.Intn(max-min+1) + min // pour faciliter le use du random : min = chiffre min, max = chiffre max
-}
-
 type Class int
 type Speed int
 type Mana int
@@ -32,40 +28,40 @@ func (c Class) String() string {
 	}
 }
 
-func (s Speed) Speed() int {
+func (s Speed) Speed() uint8 {
 	switch s {
 	case Human:
-		return RandomInt(5, 10)
+		return uint8(rand.Intn(10-4) + 5)
 	case Elf:
-		return RandomInt(7, 12)
+		return uint8(rand.Intn(12-6) + 7)
 	case Dwarf:
-		return RandomInt(1, 5)
+		return uint8(rand.Intn(5-0) + 1)
 	default:
 		return 0
 	}
 }
 
-func (s Strength) Strength() int {
+func (s Strength) Strength() uint8 {
 	switch s {
 	case Human:
-		return RandomInt(1, 10)
+		return uint8(rand.Intn(10-0) + 1)
 	case Elf:
-		return RandomInt(1, 5)
+		return uint8(rand.Intn(5-0) + 1)
 	case Dwarf:
-		return RandomInt(5, 15)
+		return uint8(rand.Intn(15-4) + 5)
 	default:
 		return 0
 	}
 }
 
-func (m Mana) Mana() int {
+func (m Mana) Mana() uint16 {
 	switch m {
 	case Human:
-		return RandomInt(1, 50)
+		return uint16(rand.Intn(50-0) + 1)
 	case Elf:
-		return RandomInt(25, 75)
+		return uint16(rand.Intn(75-24) + 25)
 	case Dwarf:
-		return RandomInt(10, 30)
+		return uint16(rand.Intn(30-9) + 10)
 	default:
 		return 0
 	}
@@ -74,14 +70,14 @@ func (m Mana) Mana() int {
 type Character struct {
 	Name              string
 	Class             Class
-	Level             int
-	Hp                int
-	HpMax             int
-	Mana              int
-	Speed             int
-	Strength          int
+	Level             uint8
+	Hp                uint16
+	HpMax             uint16
+	Mana              uint16
+	Speed             uint8
+	Strength          uint8
 	FreePotionClaimed bool
-	Money             int
+	Money             uint16
 }
 
 func FormatName(name string) string {
@@ -115,7 +111,7 @@ func FormatName(name string) string {
 
 func InitCharacter(name string, class Class) *Character {
 	FormattedName := FormatName(name)
-	HPMax := 100
+	var HPMax uint16
 	switch class {
 	case Human:
 		HPMax = 100
