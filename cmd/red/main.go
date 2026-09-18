@@ -1,14 +1,14 @@
-   package main
+package main
 
-   import (
-      "fmt"
-      "os"
-      "projet-red/internal/menu"
-   )
+import (
+	"fmt"
+	"os"
+	"projet-red/internal/menu"
+)
 
-   func main() {
-      if err := menu.Run(os.Stdin, os.Stdout); err != nil {
-         fmt.Fprintln(os.Stderr, "red:", err)
-         os.Exit(1)
-      }
-   }
+func main() {
+	if err := menu.Run(os.Stdin, os.Stdout); err != nil {
+		fmt.Fprintln(os.Stderr, "red:", err)
+		os.Exit(1)
+	}
+}
