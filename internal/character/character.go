@@ -81,6 +81,7 @@ type Character struct {
 	Speed             int
 	Strength          int
 	FreePotionClaimed bool
+	Money             int
 }
 
 func FormatName(name string) string {
@@ -134,5 +135,6 @@ func InitCharacter(name string, class Class) *Character {
 		Speed:             Speed(class).Speed(),
 		Strength:          Strength(class).Strength(),
 		FreePotionClaimed: false,
+		Money:             100,
 	}
 }
