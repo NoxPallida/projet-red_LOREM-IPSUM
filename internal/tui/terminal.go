@@ -1,10 +1,10 @@
-   package tui
+package tui
 
-   import (
-      "os"
-      "golang.org/x/term"
-   )
+import (
+	"golang.org/x/term"
+	"os"
+)
 
-   func Size() (width, height int, err error) {
-      return term.GetSize(int(os.Stdout.Fd()))
-   }
+func Size() (width, height int, err error) {
+	return term.GetSize(int(os.Stdout.Fd()))
+}
