@@ -56,8 +56,59 @@ func HasEffect(i Item, t EffectType) bool {
 	return false
 }
 
+// --- Spellbooks ---
+
+// SpellUnlock décrit ce que débloque un livre de sort :
+// l'identifiant du sort et le niveau requis pour l'apprendre.
+type SpellUnlock struct {
+	SpellID       string
+	RequiredLevel uint8
+}
+
+// spellbookRegistry associe le nom d'un item (livre) au sort qu'il débloque.
+var spellbookRegistry = make(map[string]SpellUnlock)
+
+// RegisterSpellbook lie un livre à un sort et un niveau requis.
+func RegisterSpellbook(i Item, spellID string, requiredLevel uint8) {
+	spellbookRegistry[i.Name()] = SpellUnlock{
+		SpellID:       spellID,
+		RequiredLevel: requiredLevel,
+	}
+}
+
+// SpellbookUnlock renvoie ce que débloque un item, si c'est bien un livre enregistré.
+func SpellbookUnlock(i Item) (SpellUnlock, bool) {
+	unlock, ok := spellbookRegistry[i.Name()]
+	return unlock, ok
+}
+
+// Learner est l'interface minimale côté personnage nécessaire pour
+// apprendre un sort. Évite un import cycle avec le package character.
+type Learner interface {
+	Level() uint8
+	LearnSpell(spellID string) bool // false si déjà connu
+}
+
+// UseSpellBook tente de débloquer le sort d'un livre pour un personnage.
+// Ne modifie rien côté item : c'est LearnSpell (côté character) qui a
+// la responsabilité réelle d'ajouter le sort.
+func UseSpellBook(i Item, target Learner) (bool, string) {
+	unlock, ok := SpellbookUnlock(i)
+	if !ok {
+		return false, "cet objet n'est pas un livre de sort"
+	}
+	if target.Level() < unlock.RequiredLevel {
+		return false, "Level to low"
+	}
+	if !target.LearnSpell(unlock.SpellID) {
+		return false, "Already learned"
+	}
+	return true, "Spell learned : " + unlock.SpellID
+}
+
 func init() {
 	AttachEffect(PoisonPotion, Effect{Type: EffectPoison, Amount: 10, Duration: 3})
 	AttachEffect(HealPotion, Effect{Type: EffectHeal, Amount: 50, Duration: 1})
 	AttachEffect(WarAxe, Effect{Type: EffectBleed, Amount: 5, Duration: 4})
+	RegisterSpellbook(FireballBook, "fireball", 1)
 }
