@@ -128,7 +128,7 @@ func InitCharacter(name string, class Class) *Character {
 		Name:              FormattedName,
 		Class:             class,
 		Level:             1,
-		Hp:                HPMax / 2,
+		Hp:                HPMax,
 		HpMax:             HPMax,
 		Mana:              Mana(class).Mana(),
 		Speed:             Speed(class).Speed(),
