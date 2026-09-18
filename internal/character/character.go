@@ -14,9 +14,9 @@ type Mana int
 type Strength int
 
 const (
-	Human Class = 0
-	Elf   Class = 1
-	Dwarf Class = 2
+	Human = 0
+	Elf   = 1
+	Dwarf = 2
 )
 
 func (c Class) String() string {
