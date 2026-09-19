@@ -112,11 +112,11 @@ func AvailableSpells(class Class, subclass Subclass, level uint8) []Spell {
 
 var (
 	Punch    = NewSpell("punch", "Coup de poing", 5, 0, ObtainByLevel, 1, ClassAny, SubclassAny)
-	Fireball = NewSpell("fireball", "Boule de feu", 20, 15, ObtainByBook, 0, ClassAny, SubclassAny)
+	Fireball = NewSpell("fireball", "Fireball", 20, 15, ObtainByBook, 0, ClassAny, SubclassAny)
 
-	Slash      = NewSpell("slash", "Taillade", 15, 5, ObtainByLevel, 3, Human, SubclassHumanCQC)
-	ArcaneBolt = NewSpell("arcane_bolt", "Projectile arcanique", 12, 10, ObtainByLevel, 3, Human, SubclassHumanMage)
+	Slash      = NewSpell("slash", "Simple Slash", 15, 5, ObtainByLevel, 3, Human, SubclassHumanCQC)
+	ArcaneBolt = NewSpell("arcane_bolt", "Arcane Bolt", 12, 10, ObtainByLevel, 3, Human, SubclassHumanMage)
 
-	PreciseShot = NewSpell("precise_shot", "Tir précis", 14, 6, ObtainByLevel, 3, Elf, SubclassElfArcher)
-	NatureHeal  = NewSpell("nature_heal", "Soin de la nature", 0, 12, ObtainByLevel, 3, Elf, SubclassElfSpiritMage)
+	PreciseShot = NewSpell("precise_shot", "Precise Shot", 14, 6, ObtainByLevel, 3, Elf, SubclassElfArcher)
+	NatureHeal  = NewSpell("nature_heal", "Nature Heal", 0, 12, ObtainByLevel, 3, Elf, SubclassElfSpiritMage)
 )

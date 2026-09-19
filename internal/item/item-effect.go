@@ -109,6 +109,9 @@ func UseSpellBook(i Item, target Learner) (bool, string) {
 func init() {
 	AttachEffect(PoisonPotion, Effect{Type: EffectPoison, Amount: 10, Duration: 3})
 	AttachEffect(HealPotion, Effect{Type: EffectHeal, Amount: 50, Duration: 1})
+	AttachEffect(SmallHealPotion, Effect{Type: EffectHeal, Amount: 20, Duration: 1})
+	AttachEffect(LargeHealPotion, Effect{Type: EffectHeal, Amount: 80, Duration: 1})
+	AttachEffect(TitanicHealPotion, Effect{Type: EffectHeal, Amount: 150, Duration: 1})
 	AttachEffect(WarAxe, Effect{Type: EffectBleed, Amount: 5, Duration: 4})
 	RegisterSpellbook(FireballBook, "fireball", 1)
 }

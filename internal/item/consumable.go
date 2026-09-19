@@ -32,7 +32,10 @@ func NewConsumable(name string, kind ConsumableKind, pricesell, pricebuy uint8, 
 }
 
 var (
-	HealPotion   = NewConsumable("Heal Potion", KindPotion, 0, 3, Common, 64)
-	PoisonPotion = NewConsumable("Poison Potion", KindPotion, 0, 6, Common, 64)
-	FireballBook = NewConsumable("Fireball Book", KindSpellBook, 0, 25, Rare, 1)
+	HealPotion        = NewConsumable("Heal Potion", KindPotion, 0, 3, Common, 64)
+	SmallHealPotion   = NewConsumable("Small Heal Potion", KindPotion, 0, 1, Common, 64)
+	LargeHealPotion   = NewConsumable("Large Heal Potion", KindPotion, 0, 5, Common, 64)
+	TitanicHealPotion = NewConsumable("Titanic Heal Potion", KindPotion, 0, 8, Common, 64)
+	PoisonPotion      = NewConsumable("Poison Potion", KindPotion, 0, 6, Common, 64)
+	FireballBook      = NewConsumable("Fireball Book", KindSpellBook, 0, 25, Rare, 1)
 )
