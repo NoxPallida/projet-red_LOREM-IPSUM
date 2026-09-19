@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
-	"projet-red/internal/menu"
+	"runa/internal/menu"
 )
 
 func main() {
