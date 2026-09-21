@@ -4,13 +4,23 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"time"
 
 	"runa/internal/tui"
 )
 
 const dialogText = "Placeholder : bla bla bleuh bul ezyzkfkf ..."
 
+// Run ouvre l'ecran du menu avec une boite de dialogue en bas.
+//
+// in c'est le clavier : tout ce que le joueur tape arrive par la.
+// En jeu on passe os.Stdin, en test un strings.Reader avec les
+// touches qu'on veut simuler ("q", "\n"...).
+//
+// out c'est l'ecran : tout ce qu'on affiche est ecrit dedans.
+// En jeu on passe os.Stdout, en test un bytes.Buffer qu'on relit
+// pour verifier ce qui a ete dessine.
+//
+// nil = defaut : in devient os.Stdin, out devient os.Stdout.
 func Run(in io.Reader, out io.Writer) error {
 	if in == nil {
 		in = os.Stdin
@@ -19,7 +29,7 @@ func Run(in io.Reader, out io.Writer) error {
 		out = os.Stdout
 	}
 
-	// Taille dynamique du terminal sinon err ( skill issue )
+	// Taille dynamique du terminal sinon err (skill issue).
 	w, h, err := tui.Size()
 	if err != nil {
 		return fmt.Errorf("menu: %w", err)
@@ -34,48 +44,8 @@ func Run(in io.Reader, out io.Writer) error {
 		_ = tui.ExitAltScreen(out)
 	}()
 
-	// Boite en bas
-	boxW := w - 4
-	if boxW < 10 {
-		boxW = w
-	}
-	if boxW < 10 {
-		boxW = 10
-	}
-	boxH := 7
-	x := 2
-	y := h - boxH - 1
-	if y < 0 {
-		y = 0
-	}
-
-	// dessiner la boite + ecrire texte
-	tw := tui.NewTypewriter(dialogText)
-	for !tui.IsDone(tw) {
-		tui.Tick(tw, 1)
-		drawDialog(c, x, y, boxW, boxH, tui.VisibleText(tw))
-		if err := tui.Flush(out, c.String()); err != nil {
-			return err
-		}
-		time.Sleep(25 * time.Millisecond)
-	}
-
-	// attendre ENTREE pour close
-	drawDialog(c, x, y, boxW, boxH, tui.VisibleText(tw))
-	if err := tui.Flush(out, c.String()); err != nil {
-		return err
-	}
-	for {
-		ev, err := tui.ReadKey(in)
-		if err != nil {
-			return tui.Flush(out, c.String())
-		}
-		if ev.K == tui.KeyQuit || ev.K == tui.KeyEsc {
-			return tui.Flush(out, c.String())
-		}
-		if ev.K == tui.KeyEnter {
-			break
-		}
+	if tui.Dialogue(c, out, in, dialogText) {
+		return nil
 	}
 
 	// clear box
@@ -84,40 +54,4 @@ func Run(in io.Reader, out io.Writer) error {
 		return err
 	}
 	return nil
-}
-
-// drawDialog redessine tout sur le meme canvas ( sa save des perf de pas clear a chaque fois )
-func drawDialog(c *tui.Canvas, x, y, boxW, boxH int, text string) {
-	c.Clear()
-	tui.DrawBoxWithTitle(c, x, y, boxW, boxH, "DIALOGUE")
-	lines := cutLines(text, boxW-4)
-	maxLines := boxH - 3
-	if len(lines) > maxLines {
-		lines = lines[:maxLines]
-	}
-	for i, line := range lines {
-		c.Write(x+2, y+1+i, line)
-	}
-	c.Write(x+2, y+boxH-2, "[ENTREE] fermer  [q] quitter")
-}
-
-// cutLines coupe le texte en morceaux de width lettres.
-// Simple : on coupe aux lettres, pas aux mots.
-func cutLines(s string, width int) []string {
-	if width <= 0 {
-		return []string{s}
-	}
-	letters := []rune(s)
-	out := []string{}
-	for i := 0; i < len(letters); i += width {
-		end := i + width
-		if end > len(letters) {
-			end = len(letters)
-		}
-		out = append(out, string(letters[i:end]))
-	}
-	if len(out) == 0 {
-		return []string{""}
-	}
-	return out
 }

@@ -43,11 +43,13 @@ gofmt -l internal/ cmd/
 projet-red_LOREM-IPSUM/
 ├── .github/workflows/ci.yml      # CI : gofmt + vet + test + build + lint
 ├── cmd/runa/main.go              # entree du jeu, appelle menu.Run
+├── cmd/cine/main.go              # convertit video -> .cine, mode play pour tester
 ├── internal/
 │   ├── tui/                      # moteur graphique (pret)
 │   │   ├── ansi.go               # alt-screen, curseur, Flush / FlushStyled
 │   │   ├── box.go                # cadres, titres, remplissage, centrage
 │   │   ├── canvas.go             # memoire video (lettre + couleur), rendu brut / style
+│   │   ├── dialogue.go           # Dialogue() : boite en bas + typewriter + couleurs
 │   │   ├── color.go              # palette 16 couleurs, degrades, balises /RED/, boite en degrade
 │   │   ├── errors.go             # GameError : fichier auto + operation + cause
 │   │   ├── input.go              # clavier : fleches, ENTREE, ECHAP, q, UTF-8
@@ -57,6 +59,7 @@ projet-red_LOREM-IPSUM/
 │   │   └── typewriter.go         # effet machine a ecrire, compatible texte colore
 │   ├── menu/
 │   │   ├── menu.go               # Run : boite dialogue en bas + texte qui s'ecrit
+│   │   ├── intro.go              # ShowIntro : cinematique + boite PLAY par-dessus
 │   │   ├── character.go          # sous-menu personnage (stub)
 │   │   ├── inventory.go          # sous-menu inventaire (stub)
 │   │   ├── shop.go               # sous-menu marchand (stub)
@@ -75,6 +78,9 @@ projet-red_LOREM-IPSUM/
 │   ├── inventory/
 │   │   ├── inventory.go          # capacite, ajout, upgrades (a coder)
 │   │   └── inventory_test.go     # tests inventaire (a ecrire)
+│   ├── cine/
+│   │   ├── cine.go               # format .cine : Save + Load
+│   │   └── play.go               # Play : joue un film (q pour passer)
 │   ├── shop/shop.go              # marchand, catalogue, prix (a coder)
 │   ├── forge/forge.go            # recettes forgeron (a coder)
 │   └── spell/spell.go            # sorts, apprentissage (a coder)

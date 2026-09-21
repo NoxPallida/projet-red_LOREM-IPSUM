@@ -99,6 +99,17 @@ tui.FillRect(c, x, y, w, h, ' ')                    // remplir / effacer une zon
 x, y := tui.CenteredBox(c.W, c.H, w, h)             // centrer une boite w*h
 ```
 
+Toutes les boites sont **creuses** : seul le cadre est dessine,
+l'interieur n'est jamais touche (on voit le fond a travers).
+
+## Dialogue cle en main
+
+```go
+quit := tui.Dialogue(c, out, in, "/RED/gg/RED/ test")
+// boite en bas a la bonne taille + typewriter + couleurs,
+// attend ENTREE (false) ; q/ECHAP rend true
+```
+
 Il n'y a pas d'objet "boite" à détruire : pour la fermer, on efface
 (`Clear`) et on redessine sans elle
 
@@ -128,3 +139,27 @@ return tui.NewError("impossible de lire la taille", err)
 tui.ErrorText(e)  // phrase
 e.Err             // cause (ou nil)
 ```
+
+## Cinematiques (.cine)
+
+Convertir une video (demande `ffmpeg`, une fois par video) :
+
+```bash
+go run ./cmd/cine video.mp4 [-o film.cine] [-w 80] [-h 22] [-fps 10] [-maxf 300] [-sat 2.0]
+```
+
+`-sat` = saturation des couleurs (1 = video d'origine, 2 = deux fois
+plus vif). Monte-le (3-4) si ta video est terne et ne sort qu'en
+gris/jaune : les lettres (niveaux de gris) ne changent pas, seules
+les couleurs sont avivees.
+
+Jouer un `.cine` pour tester (`q` / `ECHAP` / `ENTREE` pour passer) :
+
+```bash
+go run ./cmd/cine play film.cine
+```
+
+Dans le jeu : `cine.Load(path)` puis `cine.Play(out, in, movie)`.
+Format unique `CINE2` couleur : `----COLOR----` + lignes hexa 0-9A-F
+= index `tui.FGPalette`. Le convertisseur ne sort que du `CINE2`
+(voir `internal/cine/cine.go`).

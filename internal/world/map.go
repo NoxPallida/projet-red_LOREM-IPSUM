@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-go:embed maps/town.txt
+//go:embed maps/town.txt
 var townMapRaw string
 
 // TileLegend associe un symbole du fichier .txt à une Tile réelle.
