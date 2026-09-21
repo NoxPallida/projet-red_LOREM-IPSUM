@@ -9,7 +9,7 @@ import (
 )
 
 func Size() (width, height int, err error) {
-	return SizeFrom(os.Stdout)
+	return 50, 60, nil
 }
 
 // SizeFrom renvoie taille du terminal
