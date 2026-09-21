@@ -38,9 +38,9 @@ func RunLoop(in io.Reader, out io.Writer, w, h int, frame Frame) error {
 
 	//	c.Clear()
 	if quit := frame(c, nil); quit {
-		return Flush(out, c.String())
+		return FlushStyled(out, c)
 	}
-	if err := Flush(out, c.String()); err != nil {
+	if err := FlushStyled(out, c); err != nil {
 		return err
 	}
 
@@ -48,20 +48,19 @@ func RunLoop(in io.Reader, out io.Writer, w, h int, frame Frame) error {
 		ev, err := ReadKey(in)
 		if err != nil {
 			// EOF / closed stdin: render last state and exit
-			return Flush(out, c.String())
+			return FlushStyled(out, c)
 		}
 		if ev.K == KeyEsc {
-			return Flush(out, c.String())
+			return FlushStyled(out, c)
 		}
-		if ev.K == KeyRune && (ev.R == 'q' || ev.R == 'Q') {
-			return Flush(out, c.String())
-		}
+		// Pas de quit sur 'q' : en jeu Q = aller a l'ouest (ZQSD).
+		// Seul ECHAP quitte ; le callback frame decide du reste.
 		e := ev
 		c.Clear()
 		if quit := frame(c, &e); quit {
-			return Flush(out, c.String())
+			return FlushStyled(out, c)
 		}
-		if err := Flush(out, c.String()); err != nil {
+		if err := FlushStyled(out, c); err != nil {
 			return err
 		}
 	}

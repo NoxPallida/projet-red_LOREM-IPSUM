@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 
+	"runa/internal/character"
 	"runa/internal/tui"
 )
 
@@ -44,17 +45,10 @@ func Run(in io.Reader, out io.Writer) error {
 		_ = tui.ExitAltScreen(out)
 	}()
 
-	// Demo post-intro : msgbox d'erreur NewError, visible X secondes.
-	showTestError(c, out)
-
 	if tui.Dialogue(c, out, in, dialogText) {
 		return nil
 	}
 
-	// clear box
-	c.Clear()
-	if err := tui.Flush(out, c.String()); err != nil {
-		return err
-	}
-	return nil
+	// Suite normale : on entre dans la map monde (map.txt).
+	return StartGame(character.InitCharacter("", character.Human))
 }
