@@ -1,6 +1,7 @@
 package character
 
 import (
+	"math"
 	"math/rand"
 	"runa/internal/spell"
 )
@@ -63,6 +64,7 @@ type Character struct {
 	Name              string
 	Class             Class
 	Level             uint8
+	XP                uint16
 	Hp                uint16
 	HpMax             uint16
 	Mana              uint16
@@ -117,6 +119,7 @@ func InitCharacter(name string, class Class) *Character {
 		Name:              FormattedName,
 		Class:             class,
 		Level:             1,
+		XP:                0,
 		Hp:                HPMax,
 		HpMax:             HPMax,
 		Mana:              Mana(class).Mana(),
@@ -125,4 +128,31 @@ func InitCharacter(name string, class Class) *Character {
 		FreePotionClaimed: false,
 		Money:             100,
 	}
+}
+
+func TotalXpForLevel(level uint8) int {
+	if level <= 1 {
+		return 0
+	}
+	return int(10 * (math.Pow(float64(level-1), 1.8)))
+}
+
+func (c *Character) XpNeededForNext() int {
+	return TotalXpForLevel(c.Level+1) - TotalXpForLevel(c.Level)
+}
+func (c *Character) AddXP(amount uint16) bool {
+	c.XP += amount
+	levelUp := false
+
+	for {
+		xpNeeded := c.XpNeededForNext()
+		if int(c.XP) >= xpNeeded && c.Level < 100 {
+			c.XP -= uint16(xpNeeded)
+			c.Level += 1
+			levelUp = true
+		} else {
+			break
+		}
+	}
+	return levelUp
 }
