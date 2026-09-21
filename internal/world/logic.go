@@ -66,6 +66,17 @@ func NewWorld(loader ChunkLoader) *World {
 	return &World{loaded: make(map[[2]int]*Chunk), loader: loader}
 }
 
+// LoadRadius rend le rayon de chunks à charger pour couvrir une vue
+// de halfW x halfH cases + 2 chunks de marge, quel que soit l'écran.
+// Sans ça, sur grand terminal les bords de la vue restent vides.
+func LoadRadius(halfW, halfH int) int {
+	half := halfW
+	if halfH > half {
+		half = halfH
+	}
+	return half/ChunkSize + 2
+}
+
 func (w *World) EnsureLoaded(playerX, playerY, radius int) {
 	pcx, pcy := chunkCoords(playerX, playerY)
 	needed := make(map[[2]int]bool)
