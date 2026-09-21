@@ -50,7 +50,10 @@ func RunLoop(in io.Reader, out io.Writer, w, h int, frame Frame) error {
 			// EOF / closed stdin: render last state and exit
 			return Flush(out, c.String())
 		}
-		if ev.K == KeyQuit {
+		if ev.K == KeyEsc {
+			return Flush(out, c.String())
+		}
+		if ev.K == KeyRune && (ev.R == 'q' || ev.R == 'Q') {
 			return Flush(out, c.String())
 		}
 		e := ev

@@ -53,17 +53,6 @@ func ZoneAt(x, y int) (Zone, bool) {
 	return Zone{}, false
 }
 
-type Player struct{ X, Y int }
-
-type Direction int
-
-const (
-	North Direction = iota
-	South
-	East
-	West
-)
-
 type World struct {
 	loaded map[[2]int]*Chunk
 	loader ChunkLoader
@@ -105,26 +94,6 @@ func (w *World) TileAt(x, y int) (Tile, bool) {
 	lx := ((x % ChunkSize) + ChunkSize) % ChunkSize
 	ly := ((y % ChunkSize) + ChunkSize) % ChunkSize
 	return chunk.Tiles[ly][lx], true
-}
-
-func (w *World) TryMove(p *Player, dir Direction) bool {
-	nx, ny := p.X, p.Y
-	switch dir {
-	case North:
-		ny--
-	case South:
-		ny++
-	case East:
-		nx++
-	case West:
-		nx--
-	}
-	tile, loaded := w.TileAt(nx, ny)
-	if !loaded || !tile.Walkable {
-		return false
-	}
-	p.X, p.Y = nx, ny
-	return true
 }
 
 func chunkCoords(x, y int) (int, int) { return floorDiv(x, ChunkSize), floorDiv(y, ChunkSize) }
