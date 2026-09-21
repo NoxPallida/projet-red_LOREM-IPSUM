@@ -76,7 +76,7 @@ func Buy(c Customer, target item.Item) (PurchaseResult, string) {
 
 	// 2. vérifier l'argent
 	if c.Money() < price {
-		return ErrInsufficientMoney, "To poor :("
+		return ErrInsufficientMoney, "Too poor :("
 	}
 
 	// 3. vérifier la capacité de l'inventaire (sans ajouter encore)
