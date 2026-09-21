@@ -1,6 +1,9 @@
 package tui
 
-import "io"
+import (
+	"io"
+	"strings"
+)
 
 const (
 	altScreenOn  = "\x1b[?1049h" // ne touche pas scrollback
@@ -22,9 +25,19 @@ func ExitAltScreen(w io.Writer) error {
 	return err
 }
 
+// nlToCRLF convertit les fins de ligne pour le mode raw.
+// En raw OPOST est coupe : "\n" seul ne revient plus en debut
+// de ligne (effet escalier). "\r\n" marche dans les deux modes
+// (en cooked le terminal le replie pareil), donc on convertit
+// toujours : un seul endroit a maintenir pour tout l'affichage.
+func nlToCRLF(s string) string {
+	s = strings.ReplaceAll(s, "\r\n", "\n")
+	return strings.ReplaceAll(s, "\n", "\r\n")
+}
+
 // Flush writes a full frame : move the cursor home and overwrite the previous frame
 func Flush(w io.Writer, frame string) error {
-	_, err := io.WriteString(w, homeCursor+frame)
+	_, err := io.WriteString(w, homeCursor+nlToCRLF(frame))
 	return err
 }
 
@@ -36,6 +49,6 @@ func FlushStyled(w io.Writer, c *Canvas) error {
 	if c == nil {
 		return nil
 	}
-	_, err := io.WriteString(w, homeCursor+c.RenderStyled())
+	_, err := io.WriteString(w, homeCursor+nlToCRLF(c.RenderStyled()))
 	return err
 }

@@ -2,17 +2,23 @@ package menu
 
 import (
 	"os"
+	"time"
 
 	"runa/internal/character"
 	"runa/internal/tui"
 	"runa/internal/world"
 )
 
-// StartGame construit le monde à partir de la carte de la ville,
+// moveTick : pas + rendu toutes les 100ms.
+// Touches maintenues (répétition terminal) = mouvement continu,
+// plusieurs touches dans la même fenêtre = diagonale.
+const moveTick = 100 * time.Millisecond
+
+// StartGame construit le monde à partir de la grande carte (map.txt),
 // place le joueur à son point de spawn, puis lance la boucle de jeu.
 // C'est la seule fonction que main.go a besoin d'appeler.
 func StartGame(ch *character.Character) error {
-	loader, pm := world.LoadTownMap()
+	loader, pm := world.LoadWorldMap()
 	w := world.NewWorld(loader)
 	p := &world.Player{X: pm.StartX, Y: pm.StartY}
 	w.EnsureLoaded(p.X, p.Y, 2) // charge les chunks autour du spawn avant le 1er rendu
@@ -21,24 +27,120 @@ func StartGame(ch *character.Character) error {
 }
 
 func RunGame(ch *character.Character, w *world.World, p *world.Player) error {
-	return tui.RunLoop(os.Stdin, os.Stdout, 0, 0, func(c *tui.Canvas, ev *tui.Event) bool {
-		if ev != nil {
-			if dir, ok := directionFromEvent(*ev); ok {
-				if world.MovePlayer(w, p, dir) {
-					w.EnsureLoaded(p.X, p.Y, 2) // rayon de 2 chunks autour du joueur
+	in := os.Stdin
+	out := os.Stdout
+
+	sw, sh, err := tui.Size()
+	if err != nil {
+		return err
+	}
+	c := tui.NewCanvas(sw, sh)
+
+	if err := tui.EnterAltScreen(out); err != nil {
+		return err
+	}
+	defer func() {
+		_ = tui.ExitAltScreen(out)
+	}()
+
+	// Pompe à touches (ReadKey bloque) -> canal, comme Dialogue.
+	keys := make(chan tui.Event, 64)
+	done := make(chan struct{})
+	defer close(done)
+	go func() {
+		defer close(keys)
+		for {
+			ev, err := tui.ReadKey(in)
+			if err != nil {
+				select {
+				case keys <- tui.Event{K: tui.KeyEsc}:
+				case <-done:
 				}
+				return
 			}
-			if ev.K == tui.KeyEsc {
-				return true
+			select {
+			case keys <- ev:
+			case <-done:
+				return
 			}
 		}
+	}()
 
+	render := func() {
+		c.Clear()
 		layers := []tui.FuncLayer{worldMapLayer(w, p)}
 		c.DrawFuncLayers(layers)
-		c.DrawLayer(hudLayer(ch))
+		c.DrawLayer(hudLayer(c, ch))
+		_ = tui.FlushStyled(out, c)
+	}
+	render()
 
-		return false
-	})
+	ticker := time.NewTicker(moveTick)
+	defer ticker.Stop()
+	for range ticker.C {
+		quit := false
+		dx, dy := 0, 0
+	drain:
+		for {
+			select {
+			case ev, ok := <-keys:
+				if !ok {
+					return nil
+				}
+				if ev.K == tui.KeyEsc {
+					quit = true
+					break drain
+				}
+				if ddx, ddy, ok := dirDelta(ev); ok {
+					dx += ddx
+					dy += ddy
+				}
+			default:
+				break drain
+			}
+		}
+		if quit {
+			return nil
+		}
+		// Diagonale : on applique x puis y, chacun teste sa case.
+		// Touches opposées (q+d) s'annulent.
+		moved := false
+		if dx < 0 {
+			moved = world.MovePlayer(w, p, world.West) || moved
+		} else if dx > 0 {
+			moved = world.MovePlayer(w, p, world.East) || moved
+		}
+		if dy < 0 {
+			moved = world.MovePlayer(w, p, world.North) || moved
+		} else if dy > 0 {
+			moved = world.MovePlayer(w, p, world.South) || moved
+		}
+		if moved {
+			w.EnsureLoaded(p.X, p.Y, 2) // rayon de 2 chunks autour du joueur
+		}
+		render()
+	}
+	return nil
+}
+
+// dirDelta traduit une touche en déplacement (dx, dy).
+// Flèches + ZQSD, comme directionFromEvent.
+func dirDelta(ev tui.Event) (int, int, bool) {
+	dir, ok := directionFromEvent(ev)
+	if !ok {
+		return 0, 0, false
+	}
+	switch dir {
+	case world.North:
+		return 0, -1, true
+	case world.South:
+		return 0, 1, true
+	case world.East:
+		return 1, 0, true
+	case world.West:
+		return -1, 0, true
+	}
+	return 0, 0, false
 }
 
 // directionFromEvent traduit une touche en Direction.
