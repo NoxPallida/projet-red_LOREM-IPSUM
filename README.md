@@ -41,7 +41,7 @@ gofmt -l internal/ cmd/
 
 ```text
 projet-red_LOREM-IPSUM/
-├── .github/workflows/ci.yml      # CI : gofmt + vet + test + build + lint
+├── .github/workflows/ci.yml      # CI : gofmt + vet + lint (sans tests ni build)
 ├── cmd/runa/main.go              # entree du jeu, appelle menu.Run
 ├── cmd/cine/main.go              # convertit video -> .cine, mode play pour tester
 ├── internal/
@@ -58,15 +58,15 @@ projet-red_LOREM-IPSUM/
 │   │   ├── terminal.go           # taille ecran dynamique, detection TTY, mode brut
 │   │   └── typewriter.go         # effet machine a ecrire, compatible texte colore
 │   ├── menu/
-│   │   ├── menu.go               # Run : boite dialogue en bas + texte qui s'ecrit
+│   │   ├── menu.go               # Run : demo erreur + boite dialogue + texte qui s'ecrit
 │   │   ├── intro.go              # ShowIntro : cinematique + boite PLAY par-dessus
+│   │   ├── errordemo.go          # showTestError : msgbox NewError X secondes (demo)
 │   │   ├── character.go          # sous-menu personnage (stub)
 │   │   ├── inventory.go          # sous-menu inventaire (stub)
 │   │   ├── shop.go               # sous-menu marchand (stub)
 │   │   └── forge.go              # sous-menu forgeron (stub)
 │   ├── character/
-│   │   ├── character.go          # personnage, classes, PV, InitCharacter (en cours)
-│   │   └── character_test.go     # tests personnage (a ecrire)
+│   │   └── character.go          # personnage, classes, PV, InitCharacter (en cours)
 │   ├── item/
 │   │   ├── item.go               # base commune des objets
 │   │   ├── consumable.go         # potions, livres de sort
@@ -74,10 +74,8 @@ projet-red_LOREM-IPSUM/
 │   │   ├── loot.go               # materiaux (fourrure, peau, cuir, plume)
 │   │   ├── weapon.go             # armes (bonus, hors cahier)
 │   │   ├── item-effect.go        # effets generiques (poison, soin...)
-│   │   └── item_test.go          # tests objets (a ecrire)
 │   ├── inventory/
-│   │   ├── inventory.go          # capacite, ajout, upgrades (a coder)
-│   │   └── inventory_test.go     # tests inventaire (a ecrire)
+│   │   └── inventory.go          # capacite, ajout, upgrades (a coder)
 │   ├── cine/
 │   │   ├── cine.go               # format .cine : Save + Load
 │   │   └── play.go               # Play : joue un film (q pour passer)
