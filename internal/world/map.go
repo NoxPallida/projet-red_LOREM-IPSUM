@@ -13,9 +13,9 @@ var townMapRaw string
 // Centralisé ici : dessiner la carte ne demande de connaître QUE
 // ces caractères, jamais la structure interne de Tile.
 var TileLegend = map[rune]Tile{
-	'.': {Symbol: '.', FG: "", Walkable: true},  // herbe
+	'H': {Symbol: 'H', FG: "", Walkable: true},  // herbe
 	'#': {Symbol: '#', FG: "", Walkable: false}, // mur
-	'~': {Symbol: '~', FG: "", Walkable: false}, // eau
+	'O': {Symbol: 'O', FG: "", Walkable: false}, // eau
 	'+': {Symbol: '+', FG: "", Walkable: true},  // porte
 	'S': {Symbol: 'S', FG: "", Walkable: true},  // marchand
 	'F': {Symbol: 'F', FG: "", Walkable: true},  // forgeron
