@@ -2,34 +2,26 @@ package character
 
 import (
 	"math/rand"
+	"runa/internal/spell"
 )
 
-type Class int
 type Speed int
 type Mana int
 type Strength int
 
+// Class est un alias sur spell.Class : une seule définition existe
+// (dans spell, pour éviter un import cycle), mais reste utilisable
+// ici sous le nom character.Class / character.Human / etc.
+type Class = spell.Class
+
 const (
-	Human = 0
-	Elf   = 1
-	Dwarf = 2
+	Human = spell.Human
+	Elf   = spell.Elf
+	Dwarf = spell.Dwarf
 )
 
-func (c Class) String() string {
-	switch c {
-	case Human:
-		return "Human"
-	case Elf:
-		return "Elf"
-	case Dwarf:
-		return "Dwarf"
-	default:
-		return "Unknown species"
-	}
-}
-
 func (s Speed) Speed() uint8 {
-	switch s {
+	switch Class(s) {
 	case Human:
 		return uint8(rand.Intn(10-4) + 5)
 	case Elf:
@@ -42,7 +34,7 @@ func (s Speed) Speed() uint8 {
 }
 
 func (s Strength) Strength() uint8 {
-	switch s {
+	switch Class(s) {
 	case Human:
 		return uint8(rand.Intn(10-0) + 1)
 	case Elf:
@@ -55,7 +47,7 @@ func (s Strength) Strength() uint8 {
 }
 
 func (m Mana) Mana() uint16 {
-	switch m {
+	switch Class(m) {
 	case Human:
 		return uint16(rand.Intn(50-0) + 1)
 	case Elf:
@@ -90,7 +82,7 @@ func FormatName(name string) string {
 	full_letters := ""
 	for _, letter := range name {
 		if 'a' <= letter && letter <= 'z' || 'A' <= letter && letter <= 'Z' {
-			full_letters += string(letter) // mise en forme qu'avec les lettres dans le cas où d'autres caractères sont la
+			full_letters += string(letter)
 		}
 	}
 	fin_name := ""

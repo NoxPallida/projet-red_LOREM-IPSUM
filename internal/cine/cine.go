@@ -105,7 +105,8 @@ func Load(path string) (Movie, error) {
 	if err != nil {
 		return Movie{}, err
 	}
-	lines := strings.Split(string(data), "\n")
+	content := strings.ReplaceAll(string(data), "\r\n", "\n")
+	lines := strings.Split(content, "\n")
 	if len(lines) < 2 || lines[0] != Magic {
 		return Movie{}, fmt.Errorf("cine: mauvais magic (pas un .cine couleur ?)")
 	}
