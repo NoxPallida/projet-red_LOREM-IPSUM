@@ -1,6 +1,5 @@
 # projet-red_LOREM-IPSUM
 Projet Red Ynov 2026/2027
-
 ASCII_ART = """
 
                                     ,--.
@@ -30,53 +29,57 @@ ASCII_ART = """
               ^^\\..___,.--`
 """
 
+## Lancer / verifier
 
-```go
+```bash
+go run ./cmd/runa
+go vet ./internal/tui/ ./internal/menu/
+gofmt -l internal/ cmd/
+```
+
+## Fichiers (une ligne chacun)
+
+```text
 projet-red_LOREM-IPSUM/
-├── .github/
-│   ├── workflows/
-│   │   └── ci.yml
-│   └── pull_request_template.md
-│
-├── cmd/
-│   └── red/
-│       └── main.go
-│
+├── .github/workflows/ci.yml      # CI : gofmt + vet + test + build + lint
+├── cmd/runa/main.go              # entree du jeu, appelle menu.Run
 ├── internal/
+│   ├── tui/                      # moteur graphique (pret)
+│   │   ├── ansi.go               # alt-screen, curseur, Flush / FlushStyled
+│   │   ├── box.go                # cadres, titres, remplissage, centrage
+│   │   ├── canvas.go             # memoire video (lettre + couleur), rendu brut / style
+│   │   ├── color.go              # palette 16 couleurs, degrades, balises /RED/, boite en degrade
+│   │   ├── errors.go             # GameError : fichier auto + operation + cause
+│   │   ├── input.go              # clavier : fleches, ENTREE, ECHAP, q, UTF-8
+│   │   ├── layer.go              # calques superposes (le dernier gagne)
+│   │   ├── loop.go               # boucle affichage -> touche -> affichage
+│   │   ├── terminal.go           # taille ecran dynamique, detection TTY, mode brut
+│   │   └── typewriter.go         # effet machine a ecrire, compatible texte colore
+│   ├── menu/
+│   │   ├── menu.go               # Run : boite dialogue en bas + texte qui s'ecrit
+│   │   ├── character.go          # sous-menu personnage (stub)
+│   │   ├── inventory.go          # sous-menu inventaire (stub)
+│   │   ├── shop.go               # sous-menu marchand (stub)
+│   │   └── forge.go              # sous-menu forgeron (stub)
 │   ├── character/
-│   │   ├── character.go
-│   │   └── character_test.go
-│   │
-│   ├── inventory/
-│   │   ├── inventory.go
-│   │   └── inventory_test.go
-│   │
+│   │   ├── character.go          # personnage, classes, PV, InitCharacter (en cours)
+│   │   └── character_test.go     # tests personnage (a ecrire)
 │   ├── item/
-│   │   ├── item.go
-│   │   └── item_test.go
-│   │
-│   ├── spell/
-│   │   ├── spell.go
-│   │   └── spell_test.go
-│   │
-│   ├── shop/
-│   │   ├── shop.go
-│   │   └── shop_test.go
-│   │
-│   ├── forge/
-│   │   ├── forge.go
-│   │   └── forge_test.go
-│   │
-│   └── menu/
-│       ├── menu.go
-│       ├── character.go
-│       ├── inventory.go
-│       ├── shop.go
-│       └── forge.go
-│
-├── docs/
-│   └── test.md
-│
-├── go.mod
-└── README.md
+│   │   ├── item.go               # base commune des objets
+│   │   ├── consumable.go         # potions, livres de sort
+│   │   ├── equipment.go          # equipements + bonus PV
+│   │   ├── loot.go               # materiaux (fourrure, peau, cuir, plume)
+│   │   ├── weapon.go             # armes (bonus, hors cahier)
+│   │   ├── item-effect.go        # effets generiques (poison, soin...)
+│   │   └── item_test.go          # tests objets (a ecrire)
+│   ├── inventory/
+│   │   ├── inventory.go          # capacite, ajout, upgrades (a coder)
+│   │   └── inventory_test.go     # tests inventaire (a ecrire)
+│   ├── shop/shop.go              # marchand, catalogue, prix (a coder)
+│   ├── forge/forge.go            # recettes forgeron (a coder)
+│   └── spell/spell.go            # sorts, apprentissage (a coder)
+├── docs/test.md                  # notes de test
+├── docs/moteur.md                # doc moteur : boucle, couleurs, degrades, typewriter, boites
+├── go.mod                        # module runa, Go 1.27
+└── README.md                     # ce fichier
 ```
