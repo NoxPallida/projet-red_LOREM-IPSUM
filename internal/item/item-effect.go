@@ -95,10 +95,10 @@ type Learner interface {
 func UseSpellBook(i Item, target Learner) (bool, string) {
 	unlock, ok := SpellbookUnlock(i)
 	if !ok {
-		return false, "cet objet n'est pas un livre de sort"
+		return false, "Item is not a spell book"
 	}
 	if target.Level() < unlock.RequiredLevel {
-		return false, "Level to low"
+		return false, "Level too low"
 	}
 	if !target.LearnSpell(unlock.SpellID) {
 		return false, "Already learned"
