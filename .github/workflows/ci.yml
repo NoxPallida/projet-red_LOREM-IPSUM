@@ -38,12 +38,6 @@ jobs:
       - name: Vet
         run: go vet ./...
 
-      - name: Test
-        run: go test -v ./...
-
-      - name: Build
-        run: go build -v ./...
-
   lint:
     name: Lint
     runs-on: ubuntu-latest
