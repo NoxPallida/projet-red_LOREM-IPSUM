@@ -8,7 +8,6 @@ import (
 	"runa/internal/tui"
 )
 
-//go:embed maps/town.txt
 var townMapRaw string
 
 //go:embed maps/map.txt
@@ -31,17 +30,17 @@ var TileLegend = map[rune]Tile{
 	'S': {Symbol: Block, FG: tui.FGLightYellow, Walkable: true}, // sable/marchand -> jaune clair
 	'B': {Symbol: Block, FG: tui.FGWhite, Walkable: false},      // batiment/mur -> blanc
 	'E': {Symbol: Block, FG: tui.FGLightCyan, Walkable: true},   // entree/porte spec -> cyan clair
-	'-': {Symbol: Block, FG: tui.FGYellow, Walkable: true},      // chemin -> jaune
+	'-': {Symbol: Block, FG: tui.FGYellow, Walkable: false},     // border -> jaune
 	'=': {Symbol: ' ', FG: "", Walkable: false},                 // bordure/vide -> vide
 	// --- carte ville (town.txt, compat) ---
-	'.': {Symbol: Block, FG: tui.FGGreen, Walkable: true},      // herbe / sol
-	'#': {Symbol: Block, FG: tui.FGWhite, Walkable: false},     // mur
-	'~': {Symbol: Block, FG: tui.FGBlue, Walkable: false},      // eau
-	'+': {Symbol: Block, FG: tui.FGYellow, Walkable: true},     // porte
+	'.': {Symbol: Block, FG: tui.FGGreen, Walkable: true},        // herbe / sol
+	'#': {Symbol: Block, FG: tui.FGWhite, Walkable: false},       // mur
+	'~': {Symbol: Block, FG: tui.FGBlue, Walkable: false},        // eau
+	'+': {Symbol: Block, FG: tui.FGYellow, Walkable: true},       // porte
 	'F': {Symbol: Block, FG: tui.FGLightMagenta, Walkable: true}, // forgeron
-	'G': {Symbol: Block, FG: tui.FGLightCyan, Walkable: true},  // guilde
-	'@': {Symbol: Block, FG: tui.FGGreen, Walkable: true},      // spawn joueur : bloc d'herbe
-	' ': {Symbol: ' ', FG: "", Walkable: false},                // hors carte / vide
+	'G': {Symbol: Block, FG: tui.FGLightCyan, Walkable: true},    // guilde
+	'@': {Symbol: Block, FG: tui.FGGreen, Walkable: true},        // spawn joueur : bloc d'herbe
+	' ': {Symbol: ' ', FG: "", Walkable: false},                  // hors carte / vide
 }
 
 // ParsedMap est le résultat du parsing d'un fichier de carte :
