@@ -105,6 +105,25 @@ func Gradient(name string) []string {
 	return nil
 }
 
+// FGPalette donne les 16 couleurs de texte par index 0..15.
+// C'est l'ordre officiel partage avec le format .cine : l'index stocke
+// dans le fichier designe cette liste (0=BLACK ... 15=BRIGHTWHITE).
+var FGPalette = []string{
+	FGBlack, FGRed, FGGreen, FGYellow,
+	FGBlue, FGMagenta, FGCyan, FGWhite,
+	FGGray, FGLightRed, FGLightGreen, FGLightYellow,
+	FGLightBlue, FGLightMagenta, FGLightCyan, FGBrightWhite,
+}
+
+// FGByIndex rend la couleur de texte de l'index i.
+// Hors limites (fichier abime) = "" donc couleur du terminal.
+func FGByIndex(i int) string {
+	if i < 0 || i >= len(FGPalette) {
+		return ""
+	}
+	return FGPalette[i]
+}
+
 // ParseMarkup decoupe un texte a balises en texte brut + couleur par lettre
 // Balise = /NOM/ avec NOM dans la palette (ex : /RED/)
 // La balise bascule la couleur : la 1re l'allume, la 2e identique l'eteint
@@ -226,8 +245,10 @@ func FillStyled(c *Canvas, x, y, w, h int, r rune, fg, bg string) {
 }
 
 // DrawBoxGradient dessine un cadre dont le bord tourne en degrade
-// fgs vide = cadre normal (appel a DrawBox). L'interieur est rempli
-// avec bg pour teinter la boite. title en blanc eclatant
+// fgs vide = cadre normal (appel a DrawBox)
+// Comme toutes les boites tui elle est creuse : seul le bord est
+// dessine (teinte avec bg), l'interieur n'est jamais touche
+// title en blanc eclatant
 func DrawBoxGradient(c *Canvas, x, y, w, h int, title string, fgs []string, bg string) {
 	if len(fgs) == 0 {
 		DrawBox(c, x, y, w, h)
@@ -236,8 +257,6 @@ func DrawBoxGradient(c *Canvas, x, y, w, h int, title string, fgs []string, bg s
 	if c == nil || w < 2 || h < 2 {
 		return
 	}
-	// Fond teinte d'abord, bord par-dessus
-	FillStyled(c, x, y, w, h, ' ', "", bg)
 	// Cadre dans l'ordre horaire en partant du coin haut-gauche,
 	// pour que le degrade fasse le tour sans cassure
 	k := 0

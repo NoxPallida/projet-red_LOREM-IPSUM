@@ -2,6 +2,8 @@ package tui
 
 // DrawBox dessine un cadre sur le canvas c.
 // x, y = position du coin haut-gauche. w, h = largeur et hauteur.
+// Les boites sont creuses : seul le cadre est dessine, l'interieur
+// n'est jamais touche.
 func DrawBox(c *Canvas, x, y, w, h int) {
 	if c == nil {
 		return
