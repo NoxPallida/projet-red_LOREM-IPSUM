@@ -3,6 +3,7 @@ package character
 import (
 	"math"
 	"math/rand"
+	"runa/internal/inventory"
 	"runa/internal/spell"
 )
 
@@ -63,7 +64,7 @@ func (m Mana) Mana() uint16 {
 type Character struct {
 	Name              string
 	Class             Class
-	Level             uint8
+	level             uint8 // privé : accès via Level(), pour satisfaire guild.Member/etc.
 	XP                uint16
 	Hp                uint16
 	HpMax             uint16
@@ -71,8 +72,41 @@ type Character struct {
 	Speed             uint8
 	Strength          uint8
 	FreePotionClaimed bool
-	Money             uint16
+	money             uint16 // privé : accès via Money()/SpendMoney()/EarnMoney()
+	Inventory         inventory.Inventory
 }
+
+// Level expose le niveau du personnage. Nécessaire pour satisfaire
+// guild.Member (et plus tard toute interface qui a besoin du niveau).
+func (c *Character) Level() uint8 { return c.level }
+
+// Money expose l'argent du personnage. Nécessaire pour shop.Customer
+// et forge.Crafter (qui attendent Money() uint16, pas un champ).
+func (c *Character) Money() uint16 { return c.money }
+
+// SpendMoney retire de l'argent si le personnage en a assez ;
+// renvoie false sans rien modifier sinon.
+func (c *Character) SpendMoney(amount uint16) bool {
+	if c.money < amount {
+		return false
+	}
+	c.money -= amount
+	return true
+}
+
+// EarnMoney ajoute de l'argent, avec une protection contre le
+// dépassement de capacité d'un uint16 (65535 max).
+func (c *Character) EarnMoney(amount uint16) {
+	total := uint32(c.money) + uint32(amount)
+	if total > math.MaxUint16 {
+		total = math.MaxUint16
+	}
+	c.money = uint16(total)
+}
+
+// HasClaimedFreePotion / ClaimFreePotion : requis par shop.Customer.
+func (c *Character) HasClaimedFreePotion() bool { return c.FreePotionClaimed }
+func (c *Character) ClaimFreePotion()           { c.FreePotionClaimed = true }
 
 func FormatName(name string) string {
 	if len(name) == 0 {
@@ -118,7 +152,7 @@ func InitCharacter(name string, class Class) *Character {
 	return &Character{
 		Name:              FormattedName,
 		Class:             class,
-		Level:             1,
+		level:             1,
 		XP:                0,
 		Hp:                HPMax,
 		HpMax:             HPMax,
@@ -126,7 +160,7 @@ func InitCharacter(name string, class Class) *Character {
 		Speed:             Speed(class).Speed(),
 		Strength:          Strength(class).Strength(),
 		FreePotionClaimed: false,
-		Money:             100,
+		money:             100,
 	}
 }
 
@@ -138,21 +172,30 @@ func TotalXpForLevel(level uint8) int {
 }
 
 func (c *Character) XpNeededForNext() int {
-	return TotalXpForLevel(c.Level+1) - TotalXpForLevel(c.Level)
+	return TotalXpForLevel(c.level+1) - TotalXpForLevel(c.level)
 }
+
 func (c *Character) AddXP(amount uint16) bool {
 	c.XP += amount
 	levelUp := false
 
 	for {
 		xpNeeded := c.XpNeededForNext()
-		if int(c.XP) >= xpNeeded && c.Level < 100 {
+		if int(c.XP) >= xpNeeded && c.level < 100 {
 			c.XP -= uint16(xpNeeded)
-			c.Level += 1
+			c.level += 1
 			levelUp = true
 		} else {
 			break
 		}
 	}
 	return levelUp
+}
+
+// GainExp est l'équivalent d'AddXP mais en uint32, pour satisfaire
+// guild.Member (les récompenses de quêtes hauts rangs pourraient
+// dépasser la portée d'un uint16 un jour). Découpe l'ajout par
+// tranches de MaxUint16 pour ne jamais dépasser AddXP.
+func (c *Character) GainExp(amount uint16) {
+	c.AddXP(amount)
 }
