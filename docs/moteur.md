@@ -105,9 +105,11 @@ l'interieur n'est jamais touche (on voit le fond a travers).
 ## Dialogue cle en main
 
 ```go
-quit := tui.Dialogue(c, out, in, "/RED/gg/RED/ test")
-// boite en bas a la bonne taille + typewriter + couleurs,
-// attend ENTREE (false) ; q/ECHAP rend true
+quit := tui.Dialogue(c, out, in, "/RED/gg/RED/ test", "suite")
+// boite en bas a la bonne taille + typewriter + couleurs.
+// ESPACE pendant l'ecriture = skip ; ESPACE/ENTREE apres = texte
+// suivant (false a la fin) ; q/ECHAP = quitter (true).
+// ZQSD restent des lettres normales : Q = aller a l'ouest, PAS quitter.
 ```
 
 Il n'y a pas d'objet "boite" à détruire : pour la fermer, on efface

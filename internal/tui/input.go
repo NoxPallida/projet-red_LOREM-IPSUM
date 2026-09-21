@@ -18,7 +18,6 @@ const (
 	KeyRight                // fleche droite (ESC [ C)
 	KeyEnter                // ENTREE (\r en raw, \n en cooked)
 	KeyEsc                  // ECHAP seul
-	KeyQuit                 // q ou Q (raccourci "quitter" du moteur)
 	KeyBackspace            // retour arriere (DEL 0x7f ou BS 0x08)
 )
 
@@ -46,16 +45,21 @@ func RuneEvent(r rune) Event { return Event{K: KeyRune, R: r} }
 const escDelay = 25 * time.Millisecond
 
 // ReadKey lit UNE touche depuis r et la decode en Event
-// Touches reconnues : q/Q -> Quit, \r ou \n -> Enter,
+// Touches reconnues : \r ou \n -> Enter, ESPACE -> Rune ' ',
 // 0x7f / 0x08 -> Backspace, ESC seul -> Esc,
 // ESC [ A/B/C/D -> fleches, tout le reste -> Rune (UTF-8 gere)
 //
 // Regles a connaitre :
-// - '\r' et '\n' donnent chacun Enter Les terminaux n'envoient
-// qu'un seul des deux par appui, donc pas de double ENTREE en vrai
-// (Un fichier Windows "\r\n" donnerait deux Enter : cas rare, assume)
-// - 'q' quitte toujours : on ne peut pas taper la lettre q dans un menu
-// - Pas de bufio ici : on lit octet par octet avec ioReadFull,
+// - '\r' et '\n' donnent chacun Enter. Les terminaux n'envoient
+// qu'un seul des deux par appui, donc pas de double ENTREE en vrai.
+// (Un fichier Windows "\r\n" donnerait deux Enter : cas rare, assume.)
+// - AUCUNE touche ne veut dire "quitter" ici : 'q' rend RuneEvent('q')
+// comme une lettre normale, c'est le jeu qui decide (ex : Q = aller
+// a l'ouest). ESPACE rend RuneEvent(' ') : c'est le dialogue qui
+// s'en sert pour passer, pas le moteur.
+// - Les fleches arrivent en 3 octets (ESC [ A...) : ZQSD, ce sont de
+// simples lettres, elles ne passent jamais par readEsc.
+// - Pas de bufio ici : on lit octet par octet avec io.ReadFull,
 // donc aucun octet lu en trop, rien a "remettre" avec UnreadByte
 func ReadKey(r io.Reader) (Event, error) {
 	b, err := readByte(r)
@@ -63,8 +67,6 @@ func ReadKey(r io.Reader) (Event, error) {
 		return Event{}, err
 	}
 	switch b {
-	case 'q', 'Q':
-		return Event{K: KeyQuit}, nil
 	case '\r', '\n':
 		return Event{K: KeyEnter}, nil
 	case 0x7f, 0x08:
@@ -81,13 +83,14 @@ func ReadKey(r io.Reader) (Event, error) {
 	return readRune(b, r)
 }
 
-// readEsc decode ce qui suit un octet ESC
-// Soit c'est une fleche (3 octets rapides), soit c'etait juste ECHAP
+// readEsc decode ce qui suit un octet ESC.
+// Soit c'est une fleche (ESC [ A/B/C/D), soit c'etait juste ECHAP.
+// Les lettres normales (zqsd...) n'arrivent jamais ici : elles sont
+// lues directement comme RuneEvent par ReadKey, sans passer par ESC.
 func readEsc(r io.Reader) Event {
 	b2, ok := readByteSoon(r)
 	if !ok || b2 != '[' {
-		// Rien apres (vrai ECHAP), ou Alt+touche : on rend Esc
-		// On simplifie expres, le menu n'a pas besoin de Alt
+		// On simplifie expres, le menu n'a pas besoin de Alt.
 		return Event{K: KeyEsc}
 	}
 	b3, ok := readByteSoon(r)

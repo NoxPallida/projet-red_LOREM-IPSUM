@@ -35,7 +35,7 @@ func drawPlayBox(c *tui.Canvas) {
 	if c == nil {
 		return
 	}
-	bw, bh := 26, 7
+	bw, bh := 26, 5
 	if bw > c.W {
 		bw = c.W
 	}

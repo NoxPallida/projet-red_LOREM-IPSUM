@@ -23,12 +23,12 @@ func StartGame(ch *character.Character) error {
 func RunGame(ch *character.Character, w *world.World, p *world.Player) error {
 	return tui.RunLoop(os.Stdin, os.Stdout, 0, 0, func(c *tui.Canvas, ev *tui.Event) bool {
 		if ev != nil {
-			if dir, ok := directionFromKey(ev.K); ok {
-				if w.TryMove(p, dir) {
+			if dir, ok := directionFromEvent(*ev); ok {
+				if world.MovePlayer(w, p, dir) {
 					w.EnsureLoaded(p.X, p.Y, 2) // rayon de 2 chunks autour du joueur
 				}
 			}
-			if ev.K == tui.KeyQuit {
+			if ev.K == tui.KeyEsc {
 				return true
 			}
 		}
@@ -41,10 +41,11 @@ func RunGame(ch *character.Character, w *world.World, p *world.Player) error {
 	})
 }
 
-// directionFromKey traduit une touche fléchée en Direction.
-// Les 4 directions façon vieux Pokémon : haut/bas/gauche/droite uniquement.
-func directionFromKey(k tui.Key) (world.Direction, bool) {
-	switch k {
+// directionFromEvent traduit une touche en Direction.
+// Fleches + ZQSD (majuscules acceptees), facon vieux Pokemon :
+// haut/bas/gauche/droite uniquement. Q = ouest, PAS quitter.
+func directionFromEvent(ev tui.Event) (world.Direction, bool) {
+	switch ev.K {
 	case tui.KeyUp:
 		return world.North, true
 	case tui.KeyDown:
@@ -53,7 +54,18 @@ func directionFromKey(k tui.Key) (world.Direction, bool) {
 		return world.West, true
 	case tui.KeyRight:
 		return world.East, true
-	default:
-		return 0, false
 	}
+	if ev.K == tui.KeyRune {
+		switch ev.R {
+		case 'z', 'Z':
+			return world.North, true
+		case 's', 'S':
+			return world.South, true
+		case 'q', 'Q':
+			return world.West, true
+		case 'd', 'D':
+			return world.East, true
+		}
+	}
+	return 0, false
 }

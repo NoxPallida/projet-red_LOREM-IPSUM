@@ -1,7 +1,7 @@
 package cine
 
 // Player : joue un Movie charge avec Load, en plein terminal.
-// q / ECHAP / ENTREE passe la cinematique, EOF l'arrete aussi.
+// ESPACE / ECHAP / ENTREE passe la cinematique, EOF l'arrete aussi.
 
 import (
 	"fmt"
@@ -48,7 +48,7 @@ func PlayWith(out io.Writer, in io.Reader, m Movie, overlay func(c *tui.Canvas))
 				close(stop)
 				return
 			}
-			if ev.K == tui.KeyQuit || ev.K == tui.KeyEsc || ev.K == tui.KeyEnter {
+			if ev.K == tui.KeyEsc || ev.K == tui.KeyEnter || (ev.K == tui.KeyRune && ev.R == ' ') {
 				close(stop)
 				return
 			}
