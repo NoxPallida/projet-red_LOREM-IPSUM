@@ -64,6 +64,24 @@ func (s *InteriorSession) onDoor() bool {
 	return s != nil && s.PX == s.In.DoorX && s.PY == s.In.DoorY
 }
 
+// isNearChest indique si le joueur est sur une case adjacente au coffre.
+// Meme regle que isNearNPC (8 cases autour incluses).
+// Faux s'il n'y a pas de coffre dans la piece (ChestX < 0).
+func (s *InteriorSession) isNearChest() bool {
+	if s == nil || s.In.ChestX < 0 {
+		return false
+	}
+	dx := s.PX - s.In.ChestX
+	dy := s.PY - s.In.ChestY
+	if dx < 0 {
+		dx = -dx
+	}
+	if dy < 0 {
+		dy = -dy
+	}
+	return dx <= 1 && dy <= 1
+}
+
 // isNearNPC indique si le joueur est sur une case adjacente au PNJ de la piece.
 func (s *InteriorSession) isNearNPC() bool {
 	if s == nil {
@@ -100,17 +118,32 @@ func drawInterior(c *tui.Canvas, s *InteriorSession) {
 			c.SetStyled(sx+1, sy, '█', t.FG, "")
 		}
 	}
+	// PNJ : seulement s'il y en a un (sinon rien a dessiner).
 	npc := s.In.NPC
-	name := []rune(npc.Name)
-	c.WriteStyled(ox+npc.X*scaleX-len(name)/2+1, oy+npc.Y-1, npc.Name, npc.FG, "")
-	c.SetStyled(ox+npc.X*scaleX, oy+npc.Y, npc.Glyph, npc.FG, "")
-	c.SetStyled(ox+npc.X*scaleX+1, oy+npc.Y, '█', npc.FG, "")
+	if npc.Name != "" {
+		name := []rune(npc.Name)
+		c.WriteStyled(ox+npc.X*scaleX-len(name)/2+1, oy+npc.Y-1, npc.Name, npc.FG, "")
+		c.SetStyled(ox+npc.X*scaleX, oy+npc.Y, npc.Glyph, npc.FG, "")
+		c.SetStyled(ox+npc.X*scaleX+1, oy+npc.Y, '█', npc.FG, "")
+	}
+
+	// Coffre : seulement s'il y en a un (maisons sans habitant).
+	// Glyphe 'C' (deja dans Cells) + nom au-dessus, comme le PNJ.
+	if s.In.ChestX >= 0 {
+		chestName := []rune("Coffre")
+		c.WriteStyled(ox+s.In.ChestX*scaleX-len(chestName)/2+1, oy+s.In.ChestY-1, "Coffre", tui.FGLightYellow, "")
+		c.SetStyled(ox+s.In.ChestX*scaleX, oy+s.In.ChestY, 'C', tui.FGLightYellow, "")
+		c.SetStyled(ox+s.In.ChestX*scaleX+1, oy+s.In.ChestY, '█', tui.FGLightYellow, "")
+	}
 
 	// Joueur : pavé 2x1 blanc éclatant
 	c.SetStyled(ox+s.PX*scaleX, oy+s.PY, '█', tui.FGBrightWhite, "")
 	c.SetStyled(ox+s.PX*scaleX+1, oy+s.PY, '█', tui.FGBrightWhite, "")
 
-	if s.isNearNPC() {
+	if s.isNearChest() {
+		hint := "[SPACE] Coffre"
+		c.WriteStyled((c.W-len(hint))/2, oy+s.In.H+1, hint, tui.FGYellow, "")
+	} else if s.isNearNPC() {
 		hint := "[SPACE] Talk to " + npc.Name
 		c.WriteStyled((c.W-len(hint))/2, oy+s.In.H+1, hint, tui.FGYellow, "")
 	}

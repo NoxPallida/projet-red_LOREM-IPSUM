@@ -1,7 +1,7 @@
 # Moteur TUI
 
 Le moteur est dans `internal/tui/`. Principe : on dessine tout sur un
-`Canvas` (mémoire vidéo), puis on l'envoie d'un coup à l'écran ( c le meilleur compris que j'ai trouver )
+`Canvas` (mémoire vidéo), puis on l'envoie d'un coup à l'écran.
 Boucle typique d'une frame :
 
 ```go
@@ -19,9 +19,21 @@ A RETENIR :
   cache ce qui est dessous
 - `String()` = texte brut (pour les tests), `RenderStyled()` = avec
   couleurs (à envoyer avec `FlushStyled`)
-- `ReadKey(in)` rend une touche (`KeyUp`, `KeyEnter`, `KeyRune`...)
+- `ReadKey(in)` rend une touche bloquante (`KeyUp`, `KeyEnter`...) ;
+  `PollKey(in)` rend une touche sans bloquer (`have=false` si rien)
 
-## Texte multicolor 
+## Clavier : ReadKey vs PollKey
+
+- `ReadKey` : bloque jusqu'à la prochaine touche (dialogues, menus).
+- `PollKey` : jamais bloquant, rend `(ev, rel, have, err)`.
+  `rel=true` = relâchement (protocole kitty seulement) :
+  le jeu suit les touches TENUES pour la répétition immédiate.
+- Kittty auto-détecté (`QueryKitty`) : avec, `z` tenu = ça avance
+  tout seul ; sans, 1 touche = 1 pas. `KeyNone` = bruit avalé, ignorer.
+- Touches jeu : ZQSD + flèches (+ diagonales `aecw`), `e` = inventaire,
+  `ESPACE`/`ENTREE` = valider/interagir, `ECHAP` = quitter.
+
+## Texte multicolor
 
 Couleur simple, sans balise :
 
@@ -38,7 +50,7 @@ LIGHTCYAN BRIGHTWHITE`). La balise **bascule** : 1re fois elle allume,
 // "yo wassup" en rouge :
 tui.WriteMarkup(c, 2, 1, "test /RED/yo wassup/RED/ gg bg", "")
 
-// vert puiss normal, fond bleu :
+// vert puis normal, fond bleu :
 tui.WriteMarkup(c, 2, 2, "vie /GREEN/+25/RESET/ pv", tui.BGBlue)
 ```
 
@@ -61,17 +73,18 @@ tui.WriteGradient(c, 2, 1, "DRAGON ROUGE", "", tui.Gradient("FIRE"))
 tui.DrawBoxGradient(c, x, y, boxW, boxH, "DIALOGUE", tui.Gradient("OCEAN"), tui.BGBlue)
 ```
 
-## Typewriter
+## Typewriter (fonctions, pas méthodes)
 
 ```go
 tw := tui.NewTypewriter("Bienvenue dans RED...")
-for !tw.Done() {
-    tw.Tick(1)                        // affiche 1 lettre par 1 
+for !tui.IsDone(tw) {
+    tui.Tick(tw, 1)                   // affiche 1 lettre
     c.Clear()
-    c.Write(x, y, tw.Visible())       // ce qui est visible pour l'instant
+    c.Write(x, y, tui.VisibleText(tw)) // ce qui est visible pour l'instant
     tui.Flush(out, c.String())
-    time.Sleep(25 * time.Millisecond) // le seul Sleep, (hors du moteur nous on peut se tick affichage )
+    time.Sleep(25 * time.Millisecond)
 }
+// tui.Skip(tw) = tout d'un coup ; tui.VisibleLen(tw) = nb lettres visibles
 ```
 
 Version **couleur** : les balises ne doivent pas compter comme lettres,
@@ -80,10 +93,10 @@ donc on sépare d'abord, puis on écrit les `n` premières lettres :
 ```go
 plain, colors := tui.SplitTypewriter("test /RED/yo wassup/RED/ gg")
 tw := tui.NewTypewriter(plain)
-for !tw.Done() {
-    tw.Tick(1)
+for !tui.IsDone(tw) {
+    tui.Tick(tw, 1)
     c.Clear()
-    n := len([]rune(tw.Visible()))
+    n := tui.VisibleLen(tw)
     tui.WriteColoredRunes(c, x, y, plain, colors, n, "")
     tui.FlushStyled(out, c)
     time.Sleep(25 * time.Millisecond)
@@ -102,7 +115,7 @@ x, y := tui.CenteredBox(c.W, c.H, w, h)             // centrer une boite w*h
 Toutes les boites sont **creuses** : seul le cadre est dessine,
 l'interieur n'est jamais touche (on voit le fond a travers).
 
-## Dialogue cle en main
+## Dialogue + saisie cle en main
 
 ```go
 quit := tui.Dialogue(c, out, in, "/RED/gg/RED/ test", "suite")
@@ -112,24 +125,59 @@ quit := tui.Dialogue(c, out, in, "/RED/gg/RED/ test", "suite")
 // ZQSD restent des lettres normales : Q = aller a l'ouest, PAS quitter.
 ```
 
+```go
+// Pompe partagee (une seule par clavier !) + boite de saisie :
+keys, stop := tui.PumpKeys(in)
+defer stop()
+tui.LayoutBottomBox(c, "TITRE", texte)        // calcule la boite
+tui.DrawTextBox(c, box, colors, n, "indice")  // la redessine
+name, ok := tui.AskKeys(c, out, keys, "QUI ES-TU ?", "Ton nom ?", 12, fond)
+```
+
 Il n'y a pas d'objet "boite" à détruire : pour la fermer, on efface
 (`Clear`) et on redessine sans elle
 
-## Menu (boite de dialogue en bas)
+## Flow du jeu (main -> intro -> jeu)
 
-`menu.Run(in, out)` fait exactement : boite en bas + typewriter dedans +
-`[ENTREE]` pour fermer. Pour un nouveau menu, ( on modif plus tard ) :
+`cmd/runa/main.go` : mode raw + `audio.StartOST()` (musique en fond,
+jeu continue sans carte son) + intro + `menu.Run` :
 
-```go
-w, h, err := tui.Size()
-if err != nil {	
-    return err // pas de terminal lisible
-}
-c := tui.NewCanvas(w, h)
-tui.EnterAltScreen(out)
-defer tui.ExitAltScreen(out)
-// ... boucle : Clear -> dessiner -> Flush -> ReadKey ...
-```
+1. `menu.ShowIntro` : cinématique `.cine` + boite PLAY (skip : q/ESPACE/ENTREE).
+2. `menu.Setup` -> `ShowStory` (soul.cine en boucle) : histoire typewriter,
+   inputbox pseudo (`AskKeys`), choix race (Humain/Elfe/Nain) + sous-classe,
+   **machine a sous du mana** (`runSlotMachine` : roulette qui ralentit et
+   tombe sur le mana tiré), puis perso créé avec race + mana.
+   Sans video : perso "Traveler" Humain.
+3. `menu.Run` -> `StartGame` : monde `map.txt` (165x197, chunks 16x16),
+   spawn auto, 30 monstres, boucle `RunGame`.
+
+## Monde,interieurs, PNJ
+
+- `world/` : tiles colorées (`█` par nature : herbe, eau, sable...),
+  chunks 16x16 chargés autour du joueur (`EnsureLoaded`), `TileAt`.
+- Portes `E` (adjacentes = même porte) + `ZoneAt` : entrer = intérieur
+  généré (`world.BuildInterior`), sol bois jaune, murs blancs, porte sud.
+- Intérieurs 27x15, 1 PNJ chacun : Marchand (vert), Forgeron (rouge),
+  Aieule (magenta), Maitre de guilde (cyan). Nom affiché au-dessus,
+  case infranchissable. Sortie = remarcher sur la porte.
+- `spawner` : 30 mobs (rats/loups/sangliers/trolls selon rang),
+  respawn à proximité du kill. **Gobelin fixe** au terrain
+  d'entraînement (pas de spawn aléatoire dessus) pour grind.
+
+## Combat, mort, quetes, boutiques
+
+- Combat (`menu/combat.go` + `internal/combat`) : menus attaque / objet /
+  fuite, sorts (coût mana), consommables, effets (poison...), fuite,
+  regen mana 5 %. Victoire = XP + respawn du mob + quête guilde.
+- Mort : écran `DEAD` rouge sur noir (`menu/death.go`), ESPACE =
+  respawn au spawn avec 50 % des PV.
+- Guilde : rangs F->S, quêtes "tuer N monstres", `RegisterKill`,
+  promotion + récompenses (`TurnInQuest`). HUD : rang + XP + Lvl.
+- Marchand (`shop/`) : catalogue + prix, achat/vente, potion de soin
+  gratuite la 1re fois. Forgeron (`forge/`) : recettes + fabrication.
+  Inventaire (`e` en jeu) : voir/jeter, potions, livres de sort.
+- Perso (`character/`) : race (PV : Humain 100 / Elfe 80 / Nain 120,
+  mana/speed/force par race), XP/niveaux, sorts connus, arme, or.
 
 ## Erreurs
 
@@ -165,3 +213,10 @@ Dans le jeu : `cine.Load(path)` puis `cine.Play(out, in, movie)`.
 Format unique `CINE2` couleur : `----COLOR----` + lignes hexa 0-9A-F
 = index `tui.FGPalette`. Le convertisseur ne sort que du `CINE2`
 (voir `internal/cine/cine.go`).
+
+## Musique
+
+`internal/audio` : `ost.mp3` (mono 44kHz 32k) embarqué dans le binaire
+(`assets/embed.go`), décodé en mémoire au lancement, joué en boucle
+(`StartOST`, jamais fatal). Deps : `go-mp3` (pur Go) + `malgo`
+(C vendu avec, juste `gcc`, pas d'ALSA système requis).

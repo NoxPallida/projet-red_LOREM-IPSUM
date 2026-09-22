@@ -81,6 +81,7 @@ type Character struct {
 	FreePotionClaimed bool
 	money             uint16 // privé : accès via Money()/SpendMoney()/EarnMoney()
 	Inventory         inventory.Inventory
+	Chest             inventory.Chest
 	EquippedWeapon    *item.Weapon
 	KnownSpells       map[string]bool
 }
@@ -175,6 +176,7 @@ func InitCharacter(name string, class Class) *Character {
 		FreePotionClaimed: false,
 		money:             100,
 		Inventory:         inventory.NewInventory(),
+		Chest:             inventory.NewChest(),
 	}
 	ch.LearnAvailableSpells()
 	return ch
