@@ -23,10 +23,7 @@ type AttackOption struct {
 // puis chaque sort appris. C'est cette liste que menu/combat.go affichera.
 func AttackOptions(c *character.Character) []AttackOption {
 	base := c.BaseAttack()
-	baseDmg := c.TotalAttack()
-	if uint16(base.Damage) > baseDmg {
-		baseDmg = uint16(base.Damage)
-	}
+	baseDmg := uint16(base.Damage) + (c.TotalAttack() / 2)
 
 	opts := []AttackOption{
 		{
