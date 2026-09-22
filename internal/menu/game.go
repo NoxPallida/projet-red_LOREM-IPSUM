@@ -5,6 +5,9 @@ import (
 	"time"
 
 	"runa/internal/character"
+	"runa/internal/enemies"
+	"runa/internal/guild"
+	"runa/internal/spawner"
 	"runa/internal/tui"
 	"runa/internal/world"
 )
@@ -18,7 +21,8 @@ const (
 )
 
 // StartGame construit le monde à partir de la grande carte (map.txt),
-// place le joueur à son point de spawn, puis lance la boucle de jeu.
+// place le joueur à son point de spawn, peuple la carte de monstres
+// selon le rang de départ (F), puis lance la boucle de jeu.
 // C'est la seule fonction que main.go a besoin d'appeler.
 func StartGame(ch *character.Character) error {
 	loader, pm := world.LoadWorldMap()
@@ -26,7 +30,10 @@ func StartGame(ch *character.Character) error {
 	p := &world.Player{X: pm.StartX, Y: pm.StartY}
 	w.EnsureLoaded(p.X, p.Y, loadRadius()) // charge autour du spawn avant le 1er rendu
 
-	return RunGame(ch, w, p)
+	gs := guild.NewGuildStatus()
+	sp := spawner.NewSpawner(pm.Tiles, gs.Rank, time.Now().UnixNano())
+
+	return RunGame(ch, w, p, sp, gs)
 }
 
 // loadRadius couvre tout l'écran visible + marge, même en grand terminal.
@@ -47,7 +54,7 @@ func loadRadius() int {
 // Sans kitty (Windows conhost, vieux terminaux, pipes) : 1 touche =
 // 1 pas, exactement comme avant. Quitter : ECHAP (ou entrée fermée).
 // Le nettoyage (kitty + écran) est fait à la main avant chaque sortie.
-func RunGame(ch *character.Character, w *world.World, p *world.Player) error {
+func RunGame(ch *character.Character, w *world.World, p *world.Player, sp *spawner.Spawner, gs *guild.GuildStatus) error {
 	in := os.Stdin
 	out := os.Stdout
 
@@ -77,18 +84,48 @@ func RunGame(ch *character.Character, w *world.World, p *world.Player) error {
 		_ = tui.ExitAltScreen(out)
 	}
 
+	// pending : le monstre statique que le joueur vient de percuter,
+	// en attente du système de combat (pas encore implémenté). Tant
+	// qu'il est non-nil, le déplacement dans sa direction reste bloqué.
+	// Remis à nil dès qu'aucun axe du pas courant ne bute plus dessus.
+	var pending *enemies.EnemyInstance
+
+	// tryAxis tente un déplacement sur UN axe (dir) : si un monstre
+	// vivant occupe la case visée, le joueur se tourne vers lui sans
+	// avancer et la rencontre reste en attente (TODO combat). Sinon,
+	// le déplacement suit son cours normal via world.MovePlayer.
+	tryAxis := func(dir world.Direction) bool {
+		nx, ny := nextPos(p, dir)
+		if enemy, found := sp.EnemyAt(nx, ny); found {
+			p.Dir = dir
+			cb := RunCombat(in, out, c, ch, enemy, kitty)
+
+			if cb.PlayerWon {
+				sp.Kill(nx, ny, gs.Rank)
+				ch.GainExp(enemy.XPDrop)
+				guild.RegisterKill(gs, enemy.Template.ID) // fait avancer les quêtes actives ; le rendu se fait à la guilde
+			}
+			// défaite ou fuite : rien de spécial ici, le joueur garde ses HP courants (0 si vaincu — à gérer si tu veux un "game over" dédié)
+
+			render() // redessine la carte par-dessus l'écran de combat
+			return false
+		}
+		return world.MovePlayer(w, p, dir)
+	}
+
 	// step avance de (dx, dy) : x puis y, chacun teste sa case.
 	step := func(dx, dy int) {
 		moved := false
+		pending = nil // reset : seul un axe bloqué par un monstre le remet à jour ci-dessous
 		if dx < 0 {
-			moved = world.MovePlayer(w, p, world.West) || moved
+			moved = tryAxis(world.West) || moved
 		} else if dx > 0 {
-			moved = world.MovePlayer(w, p, world.East) || moved
+			moved = tryAxis(world.East) || moved
 		}
 		if dy < 0 {
-			moved = world.MovePlayer(w, p, world.North) || moved
+			moved = tryAxis(world.North) || moved
 		} else if dy > 0 {
-			moved = world.MovePlayer(w, p, world.South) || moved
+			moved = tryAxis(world.South) || moved
 		}
 		if moved {
 			w.EnsureLoaded(p.X, p.Y, radius)
@@ -96,9 +133,12 @@ func RunGame(ch *character.Character, w *world.World, p *world.Player) error {
 	}
 	render := func() {
 		c.Clear()
-		layers := []tui.FuncLayer{worldMapLayer(w, p)}
+		layers := []tui.FuncLayer{worldMapLayer(w, p, sp)}
 		c.DrawFuncLayers(layers)
-		c.DrawLayer(displayInfo(c, ch))
+		c.DrawLayer(displayInfo(c, ch, gs))
+		if pending != nil {
+			c.DrawLayer(encounterLayer(c, pending))
+		}
 		_ = tui.FlushStyled(out, c)
 	}
 
@@ -165,6 +205,24 @@ func RunGame(ch *character.Character, w *world.World, p *world.Player) error {
 		}
 		time.Sleep(keySleep)
 	}
+}
+
+// nextPos calcule la case visée par un déplacement d'UN axe, SANS bouger
+// le joueur ni consulter World — juste de l'arithmétique, pour pouvoir
+// vérifier la présence d'un monstre avant de déléguer à MovePlayer.
+func nextPos(p *world.Player, dir world.Direction) (int, int) {
+	x, y := p.X, p.Y
+	switch dir {
+	case world.North:
+		y--
+	case world.South:
+		y++
+	case world.East:
+		x++
+	case world.West:
+		x--
+	}
+	return x, y
 }
 
 // normDir stabilise la touche (majuscules -> minuscules pour le suivi)
