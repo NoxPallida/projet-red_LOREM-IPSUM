@@ -90,6 +90,20 @@ func RunGame(ch *character.Character, w *world.World, p *world.Player, sp *spawn
 	// Remis à nil dès qu'aucun axe du pas courant ne bute plus dessus.
 	var pending *enemies.EnemyInstance
 
+	// render redessine TOUT l'écran : fond effacé, carte, HUD, et
+	// la rencontre en cours par-dessus si elle existe. Déclaré ici
+	// (avant tryAxis) car tryAxis l'appelle après un combat.
+	render := func() {
+		c.Clear()
+		layers := []tui.FuncLayer{worldMapLayer(w, p, sp)}
+		c.DrawFuncLayers(layers)
+		c.DrawLayer(displayInfo(c, ch, gs))
+		if pending != nil {
+			c.DrawLayer(encounterLayer(c, pending))
+		}
+		_ = tui.FlushStyled(out, c)
+	}
+
 	// tryAxis tente un déplacement sur UN axe (dir) : si un monstre
 	// vivant occupe la case visée, le joueur se tourne vers lui sans
 	// avancer et la rencontre reste en attente (TODO combat). Sinon,
@@ -130,16 +144,6 @@ func RunGame(ch *character.Character, w *world.World, p *world.Player, sp *spawn
 		if moved {
 			w.EnsureLoaded(p.X, p.Y, radius)
 		}
-	}
-	render := func() {
-		c.Clear()
-		layers := []tui.FuncLayer{worldMapLayer(w, p, sp)}
-		c.DrawFuncLayers(layers)
-		c.DrawLayer(displayInfo(c, ch, gs))
-		if pending != nil {
-			c.DrawLayer(encounterLayer(c, pending))
-		}
-		_ = tui.FlushStyled(out, c)
 	}
 
 	held := map[tui.Event]time.Time{} // touches tenues (kitty) -> dernier signe de vie
