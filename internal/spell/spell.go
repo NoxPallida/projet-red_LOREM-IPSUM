@@ -13,13 +13,13 @@ const (
 func (c Class) String() string {
 	switch c {
 	case Human:
-		return "Humain"
+		return "Human"
 	case Elf:
-		return "Elfe"
+		return "Elf"
 	case Dwarf:
-		return "Nain"
+		return "Dwarf"
 	default:
-		return "Espèce inconnue"
+		return "Unknown"
 	}
 }
 
@@ -56,19 +56,19 @@ const (
 func (s Subclass) String() string {
 	switch s {
 	case SubclassHumanCQC:
-		return "Guerrier CQC"
+		return "CQC Warrior"
 	case SubclassHumanMage:
 		return "Mage"
 	case SubclassElfArcher:
 		return "Archer"
 	case SubclassElfSpiritMage:
-		return "Mage Spirituel"
+		return "Spirit Mage"
 	case SubclassDwarfWarrior:
-		return "Guerrier Nain"
+		return "Dwarf Warrior"
 	case SubclassDwarfBerserker:
 		return "Berserker"
 	default:
-		return "Aventurier"
+		return "Adventurer"
 	}
 }
 
@@ -145,15 +145,44 @@ func AvailableSpells(class Class, subclass Subclass, level uint8) []Spell {
 	return out
 }
 
-// --- Sorts définis ---
+// BaseAttackFor renvoie l'attaque de base (niveau 1) propre à la classe et sous-classe.
+func BaseAttackFor(class Class, subclass Subclass) Spell {
+	for _, s := range registry {
+		if s.Method == ObtainByLevel && s.MinLevel <= 1 {
+			if s.Class == class && s.Subclass == subclass {
+				return s
+			}
+		}
+	}
+	for _, s := range registry {
+		if s.Method == ObtainByLevel && s.MinLevel <= 1 {
+			if (s.Class == class || s.Class == ClassAny) && (s.Subclass == subclass || s.Subclass == SubclassAny) {
+				return s
+			}
+		}
+	}
+	return Punch
+}
+
+// --- Sorts et attaques définis ---
 
 var (
-	Punch    = NewSpell("punch", "Coup de poing", 5, 0, ObtainByLevel, 1, ClassAny, SubclassAny)
-	Fireball = NewSpell("fireball", "Fireball", 20, 15, ObtainByBook, 0, ClassAny, SubclassAny)
+	// Level 1: Class base attacks (0 mana cost)
+	Punch       = NewSpell("punch", "Punch", 6, 0, ObtainByLevel, 1, Human, SubclassHumanCQC)
+	ArcaneSpark = NewSpell("arcane_spark", "Arcane Spark", 7, 0, ObtainByLevel, 1, Human, SubclassHumanMage)
+	QuickShot   = NewSpell("quick_shot", "Quick Shot", 6, 0, ObtainByLevel, 1, Elf, SubclassElfArcher)
+	SpiritOrb   = NewSpell("spirit_orb", "Spirit Orb", 7, 0, ObtainByLevel, 1, Elf, SubclassElfSpiritMage)
+	HeavyStrike = NewSpell("heavy_strike", "Heavy Strike", 7, 0, ObtainByLevel, 1, Dwarf, SubclassDwarfWarrior)
+	FuriousBlow = NewSpell("furious_blow", "Furious Strike", 8, 0, ObtainByLevel, 1, Dwarf, SubclassDwarfBerserker)
 
-	Slash      = NewSpell("slash", "Simple Slash", 15, 5, ObtainByLevel, 3, Human, SubclassHumanCQC)
-	ArcaneBolt = NewSpell("arcane_bolt", "Arcane Bolt", 12, 10, ObtainByLevel, 3, Human, SubclassHumanMage)
-
+	// Level 3: Advanced skills (mana cost)
+	Slash       = NewSpell("slash", "Simple Slash", 15, 5, ObtainByLevel, 3, Human, SubclassHumanCQC)
+	ArcaneBolt  = NewSpell("arcane_bolt", "Arcane Bolt", 14, 8, ObtainByLevel, 3, Human, SubclassHumanMage)
 	PreciseShot = NewSpell("precise_shot", "Precise Shot", 14, 6, ObtainByLevel, 3, Elf, SubclassElfArcher)
 	NatureHeal  = NewSpell("nature_heal", "Nature Heal", 0, 12, ObtainByLevel, 3, Elf, SubclassElfSpiritMage)
+	ShieldBash  = NewSpell("shield_bash", "Shield Bash", 15, 5, ObtainByLevel, 3, Dwarf, SubclassDwarfWarrior)
+	RageStrike  = NewSpell("rage_strike", "Rage Strike", 18, 8, ObtainByLevel, 3, Dwarf, SubclassDwarfBerserker)
+
+	// Spells obtained by book
+	Fireball = NewSpell("fireball", "Fireball", 20, 15, ObtainByBook, 0, ClassAny, SubclassAny)
 )

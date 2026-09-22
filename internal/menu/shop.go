@@ -24,13 +24,13 @@ func RunShopMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Charact
 	for {
 		renderUnder()
 		tui.FillStyled(c, bx, by, bw, bh, ' ', "", tui.BGBlack)
-		tui.DrawBoxWithTitle(c, bx, by, bw, bh, "MARCHAND")
+		tui.DrawBoxWithTitle(c, bx, by, bw, bh, "SHOP")
 
-		goldStr := "Or : " + strconv.Itoa(int(ch.Money())) + " PO"
+		goldStr := "Gold: " + strconv.Itoa(int(ch.Money())) + " G"
 		c.WriteStyled(bx+bw-len(goldStr)-3, by+1, goldStr, tui.FGYellow, tui.BGBlack)
 
-		tabBuy := "[ Acheter ]"
-		tabSell := "[ Vendre ]"
+		tabBuy := "[ Buy ]"
+		tabSell := "[ Sell ]"
 		if mode == 0 {
 			c.WriteStyled(bx+3, by+1, tabBuy, tui.FGLightGreen, tui.BGBlack)
 			c.WriteStyled(bx+16, by+1, tabSell, tui.FGGray, tui.BGBlack)
@@ -52,9 +52,9 @@ func RunShopMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Charact
 				if rowY >= by+bh-3 {
 					break
 				}
-				priceStr := strconv.Itoa(int(entry.Price)) + " PO"
+				priceStr := strconv.Itoa(int(entry.Price)) + " G"
 				if entry.Item.Name() == item.HealPotion.Name() && !ch.HasClaimedFreePotion() {
-					priceStr = "GRATUIT"
+					priceStr = "FREE"
 				}
 				line := entry.Item.Name()
 				prefix := "  "
@@ -69,7 +69,7 @@ func RunShopMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Charact
 		} else {
 			slots := ch.Inventory.Slots
 			if len(slots) == 0 {
-				c.WriteStyled(bx+4, by+5, "(Inventaire vide)", tui.FGGray, tui.BGBlack)
+				c.WriteStyled(bx+4, by+5, "(Inventory empty)", tui.FGGray, tui.BGBlack)
 			} else {
 				if cursor >= len(slots) {
 					cursor = len(slots) - 1
@@ -83,7 +83,7 @@ func RunShopMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Charact
 						break
 					}
 					sellPrice := slot.Item.PriceSell()
-					priceStr := strconv.Itoa(int(sellPrice)) + " PO"
+					priceStr := strconv.Itoa(int(sellPrice)) + " G"
 					qtyStr := "x" + strconv.Itoa(int(slot.Quantity))
 					line := slot.Item.Name() + " " + qtyStr
 					prefix := "  "
@@ -102,7 +102,7 @@ func RunShopMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Charact
 			c.WriteStyled(bx+3, by+bh-3, msg, msgCol, tui.BGBlack)
 		}
 
-		hint := "[↑/↓] Choisir [ENTRÉE] Action [TAB] Mode [ECHAP] Sortir"
+		hint := "[↑/↓] Choose [ENTER] Action [TAB] Mode [ESC] Exit"
 		c.WriteStyled(bx+(bw-len(hint))/2, by+bh-2, hint, tui.FGBrightWhite, tui.BGBlack)
 
 		_ = tui.FlushStyled(out, c)
@@ -140,16 +140,16 @@ func RunShopMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Charact
 					res, name := shop.Buy(ch, entry.Item)
 					switch res {
 					case shop.Success:
-						msg = "Acheté : " + name + " !"
+						msg = "Bought: " + name + "!"
 						msgCol = tui.FGLightGreen
 					case shop.ErrInsufficientMoney:
-						msg = "Pas assez d'argent !"
+						msg = "Not enough gold!"
 						msgCol = tui.FGLightRed
 					case shop.ErrInventoryFull:
-						msg = "Inventaire plein !"
+						msg = "Inventory full!"
 						msgCol = tui.FGLightRed
 					default:
-						msg = "Achat impossible"
+						msg = "Cannot buy item"
 						msgCol = tui.FGLightRed
 					}
 				}
@@ -158,10 +158,10 @@ func RunShopMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Charact
 					target := ch.Inventory.Slots[cursor].Item
 					res, name := shop.Sell(ch, target)
 					if res == shop.Success {
-						msg = "Vendu : " + name + " !"
+						msg = "Sold: " + name + "!"
 						msgCol = tui.FGLightGreen
 					} else {
-						msg = "Vente impossible"
+						msg = "Cannot sell item"
 						msgCol = tui.FGLightRed
 					}
 				}

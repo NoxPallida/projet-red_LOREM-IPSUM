@@ -133,23 +133,22 @@ func displayInfo(c *tui.Canvas, ch *character.Character, gs *guild.GuildStatus) 
 	// Position X pour l'XP : juste après "Lvl: ZZ" + un espace
 	xpCol := 2 + len(lvlStr) + 1
 	l.C.WriteStyled(xpCol, 3, xpInfo, tui.FGCyan, "")
-	// Rang de guilde en ligne 4
-	l.C.Write(2, 4, "Rang: ")
+	// Guild rank on line 4
+	l.C.Write(2, 4, "Rank: ")
 	l.C.WriteStyled(8, 4, gs.Rank.String(), tui.FGGreen, "")
 	return l
 }
 
-// encounterLayer affiche un message quand le joueur bute sur un monstre
-// statique. Purement informatif tant que le système de combat n'existe pas.
+// encounterLayer displays a message when the player bumps into a static monster.
 func encounterLayer(c *tui.Canvas, e *enemies.EnemyInstance) tui.Layer {
 	w, h := 40, 4
 	x := (c.W - w) / 2
 	if x < 0 {
 		x = 0
 	}
-	l := tui.NewLayer(x, c.H-h-1, w, h) // en bas de l'écran, hors du HUD
-	tui.DrawBoxWithTitle(l.C, 0, 0, w, h, "Rencontre")
-	text := e.Template.Name + " (niv. " + strconv.Itoa(int(e.Level)) + ") bloque le passage"
+	l := tui.NewLayer(x, c.H-h-1, w, h) // at bottom of screen, outside HUD
+	tui.DrawBoxWithTitle(l.C, 0, 0, w, h, "Encounter")
+	text := e.Template.Name + " (Lvl " + strconv.Itoa(int(e.Level)) + ") blocks the path"
 	l.C.Write(2, 2, text)
 	return l
 }

@@ -25,14 +25,14 @@ func RunGuildMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Charac
 	for {
 		renderUnder()
 		tui.FillStyled(c, bx, by, bw, bh, ' ', "", tui.BGBlack)
-		tui.DrawBoxWithTitle(c, bx, by, bw, bh, "GUILDE DES AVENTURIERS")
+		tui.DrawBoxWithTitle(c, bx, by, bw, bh, "ADVENTURERS GUILD")
 
-		hdr := "Rang : " + gs.Rank.String() + "   |   Niveau : " + strconv.Itoa(int(ch.Level()))
+		hdr := "Rank: " + gs.Rank.String() + "   |   Level: " + strconv.Itoa(int(ch.Level()))
 		c.WriteStyled(bx+3, by+1, hdr, tui.FGCyan, tui.BGBlack)
 
 		quests := guild.QuestsAvailable(gs.Rank)
 		if len(quests) == 0 {
-			c.WriteStyled(bx+4, by+4, "(Aucune quête disponible pour ce rang)", tui.FGGray, tui.BGBlack)
+			c.WriteStyled(bx+4, by+4, "(No quests available for this rank)", tui.FGGray, tui.BGBlack)
 		} else {
 			if cursor >= len(quests) {
 				cursor = len(quests) - 1
@@ -63,7 +63,7 @@ func RunGuildMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Charac
 					fg = tui.FGBrightWhite
 				}
 
-				rewStr := "+" + strconv.Itoa(int(q.RewardExp)) + " XP  +" + strconv.Itoa(int(q.RewardMoney)) + " PO"
+				rewStr := "+" + strconv.Itoa(int(q.RewardExp)) + " XP  +" + strconv.Itoa(int(q.RewardMoney)) + " G"
 				qTitle := "[" + q.Rank.String() + "] " + q.Name
 				c.WriteStyled(bx+3, rowY, prefix+qTitle, fg, tui.BGBlack)
 				c.WriteStyled(bx+bw-len(rewStr)-3, rowY, rewStr, tui.FGYellow, tui.BGBlack)
@@ -71,18 +71,18 @@ func RunGuildMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Charac
 				statStr := ""
 				statCol := tui.FGWhite
 				if gs.CompletedQuests[q.ID] {
-					statStr = "[Terminée]"
+					statStr = "[Completed]"
 					statCol = tui.FGGray
 				} else if kills, active := gs.ActiveQuests[q.ID]; active {
 					if kills >= q.RequiredKills {
-						statStr = "[Terminée : ENTRÉE pour rendre !]"
+						statStr = "[Ready: ENTER to turn in!]"
 						statCol = tui.FGLightGreen
 					} else {
-						statStr = "[En cours : " + strconv.Itoa(int(kills)) + "/" + strconv.Itoa(int(q.RequiredKills)) + " " + q.MonsterID + "s]"
+						statStr = "[In progress: " + strconv.Itoa(int(kills)) + "/" + strconv.Itoa(int(q.RequiredKills)) + " " + q.MonsterID + "s]"
 						statCol = tui.FGLightYellow
 					}
 				} else {
-					statStr = "[Disponible : ENTRÉE pour accepter]"
+					statStr = "[Available: ENTER to accept]"
 					statCol = tui.FGLightCyan
 				}
 				c.WriteStyled(bx+6, rowY+1, statStr, statCol, tui.BGBlack)
@@ -93,7 +93,7 @@ func RunGuildMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Charac
 			c.WriteStyled(bx+3, by+bh-3, msg, msgCol, tui.BGBlack)
 		}
 
-		hint := "[↑/↓] Choisir [ENTRÉE] Action [P] Promotion [ECHAP] Sortir"
+		hint := "[↑/↓] Choose [ENTER] Action [P] Promotion [ESC] Exit"
 		c.WriteStyled(bx+(bw-len(hint))/2, by+bh-2, hint, tui.FGBrightWhite, tui.BGBlack)
 
 		_ = tui.FlushStyled(out, c)
@@ -119,13 +119,13 @@ func RunGuildMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Charac
 				res, newRank := guild.TryPromote(gs, ch)
 				switch res {
 				case guild.Promoted:
-					msg = "Félicitations ! Promu au Rang " + newRank.String() + " !"
+					msg = "Congratulations! Promoted to Rank " + newRank.String() + "!"
 					msgCol = tui.FGLightGreen
 				case guild.ErrLevelTooLow:
-					msg = "Niveau insuffisant pour le rang supérieur."
+					msg = "Level too low for next rank."
 					msgCol = tui.FGLightRed
 				case guild.ErrAlreadyMaxRank:
-					msg = "Vous êtes déjà au rang maximal (S) !"
+					msg = "You are already at maximum rank (S)!"
 					msgCol = tui.FGYellow
 				}
 			}
@@ -133,26 +133,26 @@ func RunGuildMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Charac
 			if cursor >= 0 && cursor < len(quests) {
 				q := quests[cursor]
 				if gs.CompletedQuests[q.ID] {
-					msg = "Quête déjà terminée."
+					msg = "Quest already completed."
 					msgCol = tui.FGGray
 				} else if kills, active := gs.ActiveQuests[q.ID]; active {
 					if kills >= q.RequiredKills {
 						res := guild.TurnInQuest(gs, ch, q.ID)
 						if res == guild.TurnedIn {
-							msg = "Quête validée ! +" + strconv.Itoa(int(q.RewardExp)) + " XP, +" + strconv.Itoa(int(q.RewardMoney)) + " PO"
+							msg = "Quest completed! +" + strconv.Itoa(int(q.RewardExp)) + " XP, +" + strconv.Itoa(int(q.RewardMoney)) + " G"
 							msgCol = tui.FGLightGreen
 						}
 					} else {
-						msg = "Quête en cours : " + strconv.Itoa(int(kills)) + "/" + strconv.Itoa(int(q.RequiredKills)) + " éliminés."
+						msg = "Quest in progress: " + strconv.Itoa(int(kills)) + "/" + strconv.Itoa(int(q.RequiredKills)) + " defeated."
 						msgCol = tui.FGLightYellow
 					}
 				} else {
 					res := guild.AcceptQuest(gs, q.ID)
 					if res == guild.Accepted {
-						msg = "Quête acceptée : " + q.Name
+						msg = "Quest accepted: " + q.Name
 						msgCol = tui.FGLightGreen
 					} else {
-						msg = "Impossible d'accepter la quête."
+						msg = "Cannot accept quest."
 						msgCol = tui.FGLightRed
 					}
 				}

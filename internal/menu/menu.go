@@ -31,7 +31,7 @@ func Setup(in io.Reader, out io.Writer, SetupPath string) (*character.Character,
 		out = os.Stdout
 	}
 	if _, err := os.Stat(SetupPath); err != nil {
-		return character.InitCharacter("Voyageur", character.Human), nil
+		return character.InitCharacter("Traveler", character.Human), nil
 	}
 	return ShowStory(in, out, SetupPath)
 }
@@ -44,7 +44,7 @@ func Run(in io.Reader, out io.Writer, ch *character.Character) error {
 		out = os.Stdout
 	}
 	if ch == nil {
-		ch = character.InitCharacter("Voyageur", character.Human)
+		ch = character.InitCharacter("Traveler", character.Human)
 	}
 
 	if err := tui.EnterAltScreen(out); err != nil {

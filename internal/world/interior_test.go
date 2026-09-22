@@ -9,18 +9,18 @@ func TestInteriorDimensionsAndNPC(t *testing.T) {
 	if in.W != 27 || in.H != 15 {
 		t.Errorf("Dimensions intérieur = %dx%d, want 27x15", in.W, in.H)
 	}
-	if in.NPC.Name != "Marchand" {
-		t.Errorf("NPC Shop attendu 'Marchand', reçu %q", in.NPC.Name)
+	if in.NPC.Name != "Merchant" {
+		t.Errorf("NPC Shop expected 'Merchant', got %q", in.NPC.Name)
 	}
 
 	inGuild := BuildInterior(ZoneGuild)
-	if inGuild.NPC.Name != "Maire de guilde" {
-		t.Errorf("NPC Guild attendu 'Maire de guilde', reçu %q", inGuild.NPC.Name)
+	if inGuild.NPC.Name != "Guild Master" {
+		t.Errorf("NPC Guild expected 'Guild Master', got %q", inGuild.NPC.Name)
 	}
 
 	inForge := BuildInterior(ZoneForge)
-	if inForge.NPC.Name != "Forgeron" {
-		t.Errorf("NPC Forge attendu 'Forgeron', reçu %q", inForge.NPC.Name)
+	if inForge.NPC.Name != "Blacksmith" {
+		t.Errorf("NPC Forge expected 'Blacksmith', got %q", inForge.NPC.Name)
 	}
 
 	// Vérifier que les zones du village sont distinctes (1 marchand, 1 maire, 1 forgeron)

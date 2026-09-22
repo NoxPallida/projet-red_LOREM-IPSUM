@@ -126,6 +126,9 @@ func RunGame(ch *character.Character, w *world.World, p *world.Player, sp *spawn
 				sp.Kill(nx, ny, gs.Rank)
 				ch.GainExp(enemy.XPDrop)
 				guild.RegisterKill(gs, enemy.Template.ID) // fait avancer les quêtes actives ; le rendu se fait à la guilde
+				for _, it := range cb.DroppedItems {
+					_ = ch.Inventory.AddItem(it, 1)
+				}
 			}
 			// defaite : ecran de mort puis respawn au spawn avec 50 % des PV.
 			if ch.Hp == 0 {
@@ -205,6 +208,19 @@ func RunGame(ch *character.Character, w *world.World, p *world.Player, sp *spawn
 			if ev.K == tui.KeyEsc && !rel {
 				leave()
 				return nil
+			}
+			// Touche 'e' ou 'E' : ouvrir l'inventaire
+			if ev.K == tui.KeyRune && (ev.R == 'e' || ev.R == 'E') && !rel {
+				if kitty {
+					tui.PopKitty(out)
+				}
+				RunInventoryMenu(in, out, c, ch, render)
+				if kitty {
+					tui.PushKitty(out)
+				}
+				render()
+				pressed = true
+				continue
 			}
 			key, dx, dy, ok := normDir(ev)
 			if !ok {
@@ -339,8 +355,6 @@ func dirDelta8(ev tui.Event) (int, int, bool) {
 			return 1, 0, true
 		case 'a', 'A':
 			return -1, -1, true
-		case 'e', 'E':
-			return 1, -1, true
 		case 'w', 'W':
 			return -1, 1, true
 		case 'c', 'C':

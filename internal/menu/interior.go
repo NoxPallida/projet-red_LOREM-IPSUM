@@ -81,27 +81,37 @@ func (s *InteriorSession) isNearNPC() bool {
 }
 
 // drawInterior : fond noir explicite sur tout l'ecran, piece centree,
-// PNJ avec son nom au-dessus, joueur en bloc blanc (comme dehors).
+// PNJ avec son nom au-dessus, joueur en bloc blanc 2x plus large (comme dehors).
 func drawInterior(c *tui.Canvas, s *InteriorSession) {
 	if s == nil {
 		return
 	}
 	tui.FillStyled(c, 0, 0, c.W, c.H, ' ', "", tui.BGBlack)
-	ox := (c.W - s.In.W) / 2
+	const scaleX = 2
+	roomW := s.In.W * scaleX
+	ox := (c.W - roomW) / 2
 	oy := (c.H - s.In.H) / 2
 	for y := 0; y < s.In.H; y++ {
 		for x := 0; x < s.In.W; x++ {
 			t := s.In.At(x, y)
-			c.SetStyled(ox+x, oy+y, t.Symbol, t.FG, "")
+			sx := ox + x*scaleX
+			sy := oy + y
+			c.SetStyled(sx, sy, '█', t.FG, "")
+			c.SetStyled(sx+1, sy, '█', t.FG, "")
 		}
 	}
 	npc := s.In.NPC
 	name := []rune(npc.Name)
-	c.WriteStyled(ox+npc.X-len(name)/2, oy+npc.Y-1, npc.Name, npc.FG, "")
-	c.SetStyled(ox+npc.X, oy+npc.Y, npc.Glyph, npc.FG, "")
-	c.SetStyled(ox+s.PX, oy+s.PY, '█', tui.FGBrightWhite, "")
+	c.WriteStyled(ox+npc.X*scaleX-len(name)/2+1, oy+npc.Y-1, npc.Name, npc.FG, "")
+	c.SetStyled(ox+npc.X*scaleX, oy+npc.Y, npc.Glyph, npc.FG, "")
+	c.SetStyled(ox+npc.X*scaleX+1, oy+npc.Y, '█', npc.FG, "")
+
+	// Joueur : pavé 2x1 blanc éclatant
+	c.SetStyled(ox+s.PX*scaleX, oy+s.PY, '█', tui.FGBrightWhite, "")
+	c.SetStyled(ox+s.PX*scaleX+1, oy+s.PY, '█', tui.FGBrightWhite, "")
+
 	if s.isNearNPC() {
-		hint := "[ESPACE] Parler avec " + npc.Name
+		hint := "[SPACE] Talk to " + npc.Name
 		c.WriteStyled((c.W-len(hint))/2, oy+s.In.H+1, hint, tui.FGYellow, "")
 	}
 }

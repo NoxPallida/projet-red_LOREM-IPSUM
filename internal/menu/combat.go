@@ -122,7 +122,7 @@ func handleCombatInput(cb *combat.Combat, ev tui.Event, screen *combatScreen, cu
 }
 
 func drawCombat(c *tui.Canvas, cb *combat.Combat, screen combatScreen, cursor int) {
-	tui.DrawBoxWithTitle(c, 0, 0, c.W, c.H, "Combat")
+	tui.DrawBoxWithTitle(c, 0, 0, c.W, c.H, "COMBAT")
 
 	// Ligne joueur : nom, HP, mana.
 	c.Write(2, 2, cb.Player.Name)
@@ -132,7 +132,7 @@ func drawCombat(c *tui.Canvas, cb *combat.Combat, screen combatScreen, cursor in
 	c.WriteStyled(20, 3, mana, tui.FGCyan, "")
 
 	// Ligne ennemi.
-	c.Write(2, 5, cb.Enemy.Template.Name+" (niv. "+strconv.Itoa(int(cb.Enemy.Level))+")")
+	c.Write(2, 5, cb.Enemy.Template.Name+" (Lvl "+strconv.Itoa(int(cb.Enemy.Level))+")")
 	ehp := "HP: " + strconv.Itoa(int(cb.Enemy.HP)) + "/" + strconv.Itoa(int(cb.Enemy.MaxHP))
 	c.WriteStyled(2, 6, ehp, tui.FGLightRed, "")
 
@@ -140,18 +140,18 @@ func drawCombat(c *tui.Canvas, cb *combat.Combat, screen combatScreen, cursor in
 	y := 9
 	switch screen {
 	case screenMain:
-		drawMenuList(c, 2, y, []string{"Attaque", "Objet", "Fuir"}, cursor)
+		drawMenuList(c, 2, y, []string{"Attack", "Item", "Flee"}, cursor)
 	case screenAttack:
 		opts := combat.AttackOptions(cb.Player)
 		labels := make([]string, len(opts))
 		for i, o := range opts {
-			labels[i] = o.Name + " (" + strconv.Itoa(int(o.Damage)) + " dgts, " + strconv.Itoa(int(o.ManaCost)) + " mana)"
+			labels[i] = o.Name + " (" + strconv.Itoa(int(o.Damage)) + " dmg, " + strconv.Itoa(int(o.ManaCost)) + " mana)"
 		}
 		drawMenuList(c, 2, y, labels, cursor)
 	case screenItem:
 		items := combat.AvailableConsumables(cb.Player)
 		if len(items) == 0 {
-			c.Write(2, y, "Aucun objet. (Entrée pour revenir)")
+			c.Write(2, y, "No items. (Press Enter to go back)")
 		} else {
 			labels := make([]string, len(items))
 			for i, it := range items {
