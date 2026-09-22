@@ -224,15 +224,27 @@ func RunGame(ch *character.Character, w *world.World, p *world.Player, sp *spawn
 			}
 			key, dx, dy, ok := normDir(ev)
 			if !ok {
-				// Espace ou Entrée : interaction avec le PNJ si adjacent dans un intérieur
+				// Espace ou Entrée : coffre si adjacent, sinon PNJ si adjacent.
 				if (ev.K == tui.KeyEnter || (ev.K == tui.KeyRune && ev.R == ' ')) && !rel {
-					if inIn != nil && inIn.isNearNPC() {
+					if inIn != nil && inIn.isNearChest() {
+						if kitty {
+							tui.PopKitty(out)
+						}
+						RunChestMenu(in, out, c, ch, &ch.Chest, render)
+						if kitty {
+							tui.PushKitty(out)
+						}
+						render()
+						pressed = true
+					} else if inIn != nil && inIn.isNearNPC() {
 						if kitty {
 							tui.PopKitty(out)
 						}
 						switch inIn.In.Kind {
 						case world.ZoneShop:
 							RunShopMenu(in, out, c, ch, render)
+						case world.ZoneForge:
+							RunForgeMenu(in, out, c, ch, render)
 						case world.ZoneGuild:
 							RunGuildMenu(in, out, c, ch, gs, render)
 						}

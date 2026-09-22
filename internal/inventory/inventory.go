@@ -22,6 +22,22 @@ type Inventory struct {
 	Upgrades uint8
 }
 
+// Chest est le coffre de stockage d'une maison : exactement la meme
+// logique que Inventory (slots, piles, capacite), sans la dupliquer.
+// Comme Class = spell.Class, c'est un alias, pas un nouveau type :
+// toutes les methodes d'Inventory (AddItem, RemoveItem...) marchent
+// direct dessus. Seule difference d'usage : Upgrades n'est jamais
+// utilise pour un coffre (capacite fixe).
+type Chest = Inventory
+
+func NewChest() Chest {
+	return Chest{
+		Slots:    make([]Slot, 0, BaseCapacity),
+		Capacity: BaseCapacity,
+		Upgrades: 0,
+	}
+}
+
 func NewInventory() Inventory {
 	return Inventory{
 		Slots:    make([]Slot, 0, BaseCapacity),

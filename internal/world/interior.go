@@ -21,6 +21,11 @@ type Interior struct {
 	DoorX int
 	DoorY int
 	NPC   NPC
+	// Coffre : case de stockage, infranchissable comme le PNJ.
+	// Le CONTENU vit sur le perso (Character.Chest, un seul coffre
+	// partage) ; ici ce n'est que la position du meuble.
+	ChestX int
+	ChestY int
 }
 
 const (
@@ -35,10 +40,10 @@ func npcByKind(kind ZoneKind) NPC {
 		return NPC{Name: "Merchant", X: interiorW / 2, Y: 5, Glyph: 'M', FG: tui.FGLightGreen}
 	case ZoneForge:
 		return NPC{Name: "Blacksmith", X: interiorW / 2, Y: 5, Glyph: 'B', FG: tui.FGLightRed}
-	case ZoneHome:
-		return NPC{Name: "Elder", X: interiorW / 2, Y: 5, Glyph: 'E', FG: tui.FGLightMagenta}
-	default: // ZoneGuild et autres
+	case ZoneGuild:
 		return NPC{Name: "Guild Master", X: interiorW / 2, Y: 5, Glyph: 'G', FG: tui.FGLightCyan}
+	default:
+		return NPC{}
 	}
 }
 
@@ -64,8 +69,21 @@ func BuildInterior(kind ZoneKind) Interior {
 	in.DoorX, in.DoorY = in.W/2, in.H-1
 	in.Cells[in.DoorY][in.DoorX] = Tile{Symbol: '█', FG: tui.FGLightCyan, Walkable: true, Kind: TileDoor}
 	// PNJ au centre, sur une case devenue infranchissable.
+	// Sans habitant (Name vide) : on ne touche a aucune case.
 	in.NPC = npcByKind(kind)
-	in.Cells[in.NPC.Y][in.NPC.X] = Tile{Symbol: in.NPC.Glyph, FG: in.NPC.FG, Walkable: false, Kind: TileVoid}
+	if in.NPC.Name != "" {
+		in.Cells[in.NPC.Y][in.NPC.X] = Tile{Symbol: in.NPC.Glyph, FG: in.NPC.FG, Walkable: false, Kind: TileVoid}
+	}
+	// Coffre UNIQUEMENT dans les maisons sans habitant : celles qui ont
+	// un PNJ n'en ont pas besoin. En haut a gauche (sol libre : loin
+	// PNJ, porte et spawn). Meme motif que le PNJ : glyphe + case
+	// infranchissable. Sans coffre : ChestX/ChestY = -1 (pas de case).
+	if in.NPC.Name == "" {
+		in.ChestX, in.ChestY = 3, 3
+		in.Cells[in.ChestY][in.ChestX] = Tile{Symbol: 'C', FG: tui.FGLightYellow, Walkable: false, Kind: TileVoid}
+	} else {
+		in.ChestX, in.ChestY = -1, -1
+	}
 	return in
 }
 
