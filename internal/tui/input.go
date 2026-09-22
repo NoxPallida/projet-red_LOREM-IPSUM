@@ -2,6 +2,7 @@ package tui
 
 import (
 	"io"
+	"strings"
 	"time"
 	"unicode/utf8"
 )
@@ -84,31 +85,79 @@ func ReadKey(r io.Reader) (Event, error) {
 }
 
 // readEsc decode ce qui suit un octet ESC.
-// Soit c'est une fleche (ESC [ A/B/C/D), soit c'etait juste ECHAP.
-// Les lettres normales (zqsd...) n'arrivent jamais ici : elles sont
-// lues directement comme RuneEvent par ReadKey, sans passer par ESC.
+// Soit c'est une fleche (ESC [ A/B/C/D), soit c'etait juste ECHAP,
+// soit une sequence CSI/SS3 etendue (pavedown, numpad...).
+// Une sequence non reconnue est avalee (KeyNone), JAMAIS prise pour ECHAP.
 func readEsc(r io.Reader) Event {
 	b2, ok := readByteSoon(r)
-	if !ok || b2 != '[' {
-		// On simplifie expres, le menu n'a pas besoin de Alt.
-		return Event{K: KeyEsc}
-	}
-	b3, ok := readByteSoon(r)
 	if !ok {
 		return Event{K: KeyEsc}
 	}
-	switch b3 {
-	case 'A':
-		return Event{K: KeyUp}
-	case 'B':
-		return Event{K: KeyDown}
-	case 'C':
-		return Event{K: KeyRight}
-	case 'D':
-		return Event{K: KeyLeft}
-	default:
-		return Event{K: KeyEsc}
+	if b2 == 'O' {
+		b3, ok := readByteSoon(r)
+		if !ok {
+			return Event{K: KeyNone}
+		}
+		if b3 >= 'p' && b3 <= 'y' {
+			return RuneEvent(rune('0' + (b3 - 'p')))
+		}
+		if b3 == 'M' {
+			return Event{K: KeyEnter}
+		}
+		return Event{K: KeyNone}
 	}
+	if b2 != '[' {
+		return Event{K: KeyNone}
+	}
+	var body []byte
+	for len(body) < 24 {
+		b, ok := readByteSoon(r)
+		if !ok {
+			return Event{K: KeyNone}
+		}
+		if (b >= '0' && b <= '9') || b == ';' || b == ':' || b == '?' {
+			body = append(body, b)
+			continue
+		}
+		if len(body) == 0 {
+			switch b {
+			case 'A':
+				return Event{K: KeyUp}
+			case 'B':
+				return Event{K: KeyDown}
+			case 'C':
+				return Event{K: KeyRight}
+			case 'D':
+				return Event{K: KeyLeft}
+			}
+		} else {
+			s := string(body)
+			if s == "1" || strings.HasPrefix(s, "1;") {
+				switch b {
+				case 'A':
+					return Event{K: KeyUp}
+				case 'B':
+					return Event{K: KeyDown}
+				case 'C':
+					return Event{K: KeyRight}
+				case 'D':
+					return Event{K: KeyLeft}
+				}
+			}
+			if b == '~' {
+				if s == "3" {
+					return Event{K: KeyBackspace}
+				}
+				return Event{K: KeyNone}
+			}
+			if b == 'u' || b == 'U' {
+				ev, _, _ := parseKittyU(body)
+				return ev
+			}
+		}
+		return Event{K: KeyNone}
+	}
+	return Event{K: KeyNone}
 }
 
 // readByte lit UN seul octet, en bloquant jusqu'a l'avoir

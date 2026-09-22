@@ -20,9 +20,10 @@ import (
 //
 // nil = defaut : in devient os.Stdin, out devient os.Stdout.
 
-// Setup joue l'intro-histoire (video en boucle + pseudo) et rend
-// le pseudo tape (X). Sans fichier video : rend "", nil.
-func Setup(in io.Reader, out io.Writer, SetupPath string) (string, error) {
+// Setup joue l'intro-histoire (video en boucle + pseudo), le dialogue
+// et la machine a sous (race et mana), puis rend le personnage cree.
+// Sans fichier video : rend un personnage par defaut.
+func Setup(in io.Reader, out io.Writer, SetupPath string) (*character.Character, error) {
 	if in == nil {
 		in = os.Stdin
 	}
@@ -30,17 +31,20 @@ func Setup(in io.Reader, out io.Writer, SetupPath string) (string, error) {
 		out = os.Stdout
 	}
 	if _, err := os.Stat(SetupPath); err != nil {
-		return "", nil
+		return character.InitCharacter("Voyageur", character.Human), nil
 	}
 	return ShowStory(in, out, SetupPath)
 }
 
-func Run(in io.Reader, out io.Writer, name string) error {
+func Run(in io.Reader, out io.Writer, ch *character.Character) error {
 	if in == nil {
 		in = os.Stdin
 	}
 	if out == nil {
 		out = os.Stdout
+	}
+	if ch == nil {
+		ch = character.InitCharacter("Voyageur", character.Human)
 	}
 
 	if err := tui.EnterAltScreen(out); err != nil {
@@ -51,5 +55,5 @@ func Run(in io.Reader, out io.Writer, name string) error {
 	}()
 
 	// Suite normale : on entre dans la map monde (map.txt).
-	return StartGame(character.InitCharacter(name, character.Human))
+	return StartGame(ch)
 }

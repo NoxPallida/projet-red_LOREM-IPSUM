@@ -38,6 +38,9 @@ func PumpKeys(in io.Reader) (<-chan Event, func()) {
 				}
 				return
 			}
+			if ev.K == KeyNone {
+				continue
+			}
 			select {
 			case keys <- ev:
 			case <-done:
@@ -198,7 +201,9 @@ func AskKeys(c *Canvas, out io.Writer, keys <-chan Event, title, prompt string, 
 					buf = buf[:len(buf)-1]
 				}
 			case ev.K == KeyEsc:
-				return "", false
+				if len(buf) > 0 {
+					buf = nil
+				}
 			case ev.K == KeyRune:
 				if len(buf) < maxLen && (unicode.IsLetter(ev.R) || unicode.IsDigit(ev.R) || ev.R == '-' || ev.R == '_') {
 					buf = append(buf, ev.R)

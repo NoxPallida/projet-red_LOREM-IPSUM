@@ -16,6 +16,7 @@ const (
 	TileSand
 	TileBuilding
 	TileDoor
+	TileFloor
 )
 
 // Tile porte aussi une couleur, pour que le rendu tui n'ait qu'à lire
@@ -55,12 +56,15 @@ func (z Zone) Contains(x, y int) bool {
 	return x >= z.MinX && x <= z.MaxX && y >= z.MinY && y <= z.MaxY
 }
 
+// Zones calees sur les vrais batiments de map.txt (bornes incluses).
+// Chaque porte 'E' doit tomber dans le rect de son batiment : c'est
+// comme ca qu'entrer/sortir retrouve le bon interieur.
 var Zones = []Zone{
 	{Name: "Town", Kind: ZoneTown, MinX: 10, MinY: 10, MaxX: 30, MaxY: 30},
-	{Name: "Shop", Kind: ZoneShop, MinX: 14, MinY: 12, MaxX: 16, MaxY: 14},
-	{Name: "Forge", Kind: ZoneForge, MinX: 20, MinY: 12, MaxX: 22, MaxY: 14},
-	{Name: "Home", Kind: ZoneHome, MinX: 14, MinY: 20, MaxX: 16, MaxY: 22},
-	{Name: "Guild", Kind: ZoneGuild, MinX: 20, MinY: 20, MaxX: 22, MaxY: 22},
+	{Name: "Shop", Kind: ZoneShop, MinX: 55, MinY: 172, MaxX: 67, MaxY: 176},
+	{Name: "Guild", Kind: ZoneGuild, MinX: 70, MinY: 172, MaxX: 82, MaxY: 176},
+	{Name: "Forge", Kind: ZoneForge, MinX: 55, MinY: 179, MaxX: 67, MaxY: 183},
+	{Name: "Home", Kind: ZoneHome, MinX: 70, MinY: 179, MaxX: 82, MaxY: 183},
 }
 
 func ZoneAt(x, y int) (Zone, bool) {

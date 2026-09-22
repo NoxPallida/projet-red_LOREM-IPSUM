@@ -13,13 +13,30 @@ const (
 func (c Class) String() string {
 	switch c {
 	case Human:
-		return "Human"
+		return "Humain"
 	case Elf:
-		return "Elf"
+		return "Elfe"
 	case Dwarf:
-		return "Dwarf"
+		return "Nain"
 	default:
-		return "Unknown species"
+		return "Espèce inconnue"
+	}
+}
+
+// AllClasses liste toutes les races définies dans le jeu.
+var AllClasses = []Class{Human, Elf, Dwarf}
+
+// SubclassesForClass renvoie les spécialisations définies pour la race donnée.
+func SubclassesForClass(c Class) []Subclass {
+	switch c {
+	case Human:
+		return []Subclass{SubclassHumanCQC, SubclassHumanMage}
+	case Elf:
+		return []Subclass{SubclassElfArcher, SubclassElfSpiritMage}
+	case Dwarf:
+		return []Subclass{SubclassDwarfWarrior, SubclassDwarfBerserker}
+	default:
+		return nil
 	}
 }
 
@@ -32,8 +49,28 @@ const (
 	SubclassHumanMage
 	SubclassElfArcher
 	SubclassElfSpiritMage
-	// SubclassDwarf... : à définir avec le groupe, cf. README
+	SubclassDwarfWarrior
+	SubclassDwarfBerserker
 )
+
+func (s Subclass) String() string {
+	switch s {
+	case SubclassHumanCQC:
+		return "Guerrier CQC"
+	case SubclassHumanMage:
+		return "Mage"
+	case SubclassElfArcher:
+		return "Archer"
+	case SubclassElfSpiritMage:
+		return "Mage Spirituel"
+	case SubclassDwarfWarrior:
+		return "Guerrier Nain"
+	case SubclassDwarfBerserker:
+		return "Berserker"
+	default:
+		return "Aventurier"
+	}
+}
 
 // ClassAny : pas de restriction de race (ex: Coup de poing).
 const ClassAny Class = -1
