@@ -114,4 +114,12 @@ func init() {
 	AttachEffect(TitanicHealPotion, Effect{Type: EffectHeal, Amount: 150, Duration: 1})
 	AttachEffect(WarAxe, Effect{Type: EffectBleed, Amount: 5, Duration: 4})
 	RegisterSpellbook(FireballBook, "fireball", 1)
+	RegisterSpellbook(HealBook, "heal", 1)
+	RegisterSpellbook(ShadowBoltBook, "shadow_bolt", 1)
+	RegisterSpellbook(PoisonDartBook, "poison_dart", 1)
+	RegisterSpellbook(ChainLightningBook, "chain_lightning", 1)
+	RegisterSpellbook(IceBarrierBook, "ice_barrier", 1)
+	RegisterSpellbook(DivineSmiteBook, "divine_smite", 1)
+	RegisterSpellbook(LifeDrainBook, "life_drain", 1)
+	RegisterSpellbook(EarthquakeBook, "earthquake", 1)
 }

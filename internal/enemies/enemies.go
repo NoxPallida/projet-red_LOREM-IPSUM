@@ -188,14 +188,42 @@ func (e *EnemyInstance) RollDrops() []item.Item {
 // Les ID ("rat", "wolf", "boar", "troll", "goblin") sont alignés sur
 // guild.Quest.MonsterID, pour que RegisterKill(g, enemy.Template.ID)
 // fonctionne directement une fois le combat implémenté.
-
+// ID name hp atk speed xp
 var (
-	Rat = NewEnemyTemplate("rat", "Rat", 10, 2, 8, 5,
-		0.15, 0.10, 0.20,
-		Attack{Name: "Bite", Damage: 2},
+	Rat = NewEnemyTemplate("rat", "Rat", 3, 1, 8, 2,
+		0.11, 0.10, 0.15,
+		Attack{Name: "Bite", Damage: 1},
 	).WithDrops(
-		DropRate{Item: item.RavenFeather, Chance: 0.60, Quantity: 1},
-		DropRate{Item: item.SmallHealPotion, Chance: 0.25, Quantity: 1},
+		DropRate{Item: item.RatHide, Chance: 0.60, Quantity: 1},
+		DropRate{Item: item.SmallHealPotion, Chance: 0.05, Quantity: 1},
+	)
+
+	Slime = NewEnemyTemplate("slime", "Slime", 20, 0, 2, 1,
+		0.75, 0, 0.05,
+		Attack{Name: "Wobble", Damage: 0},
+	).WithDrops(
+		DropRate{Item: item.SlimeMucus, Chance: 1, Quantity: 2},
+	)
+
+	Goblin = NewEnemyTemplate("goblin", "Goblin", 10, 2, 4, 5,
+		0.13, 0.10, 0.16,
+		Attack{Name: "Club Strike", Damage: 3},
+		Attack{Name: "Rock Throw", Damage: 2},
+	).WithDrops(
+		DropRate{Item: item.SmallHealPotion, Chance: 0.10, Quantity: 1},
+		DropRate{Item: item.GoblinSkin, Chance: 0.30, Quantity: 1},
+		DropRate{Item: item.FireballBook, Chance: 0.05, Quantity: 1},
+	)
+
+	Hobgoblin = NewEnemyTemplate("hobgoblin", "Hobgoblin", 17, 4, 6, 10,
+		0.16, 0.11, 0.18,
+		Attack{Name: "Club Strike", Damage: 5},
+		Attack{Name: "Rock Throw", Damage: 4},
+	).WithDrops(
+		DropRate{Item: item.SmallHealPotion, Chance: 0.15, Quantity: 1},
+		DropRate{Item: item.HealPotion, Chance: 0.05, Quantity: 1},
+		DropRate{Item: item.GoblinSkin, Chance: 0.40, Quantity: 2},
+		DropRate{Item: item.ShadowBoltBook, Chance: 0.05, Quantity: 1},
 	)
 
 	Wolf = NewEnemyTemplate("wolf", "Wolf", 25, 5, 10, 10,
@@ -204,7 +232,9 @@ var (
 		Attack{Name: "Claw", Damage: 4},
 	).WithDrops(
 		DropRate{Item: item.WolfFur, Chance: 0.75, Quantity: 1},
-		DropRate{Item: item.SmallHealPotion, Chance: 0.20, Quantity: 1},
+		DropRate{Item: item.WolfClaw, Chance: 0.15, Quantity: 3},
+		DropRate{Item: item.SmallHealPotion, Chance: 0.05, Quantity: 1},
+		DropRate{Item: item.HealBook, Chance: 0.10, Quantity: 1},
 	)
 
 	Boar = NewEnemyTemplate("boar", "Boar", 40, 7, 6, 15,
@@ -212,7 +242,8 @@ var (
 		Attack{Name: "Charge", Damage: 8},
 	).WithDrops(
 		DropRate{Item: item.BoarLeather, Chance: 0.80, Quantity: 1},
-		DropRate{Item: item.HealPotion, Chance: 0.30, Quantity: 1},
+		DropRate{Item: item.BoarTusk, Chance: 0.10, Quantity: 1},
+		DropRate{Item: item.SmallHealPotion, Chance: 0.15, Quantity: 1},
 	)
 
 	Troll = NewEnemyTemplate("troll", "Troll", 120, 15, 4, 50,
@@ -221,17 +252,90 @@ var (
 		Attack{Name: "Crush", Damage: 20},
 	).WithDrops(
 		DropRate{Item: item.TrollHide, Chance: 1.00, Quantity: 1},
-		DropRate{Item: item.LargeHealPotion, Chance: 0.50, Quantity: 1},
-		DropRate{Item: item.FireballBook, Chance: 0.20, Quantity: 1},
+		DropRate{Item: item.HealPotion, Chance: 0.20, Quantity: 1},
+		DropRate{Item: item.EarthquakeBook, Chance: 0.05, Quantity: 1}, // Thématique physique/terre
 	)
 
-	Goblin = NewEnemyTemplate("goblin", "Goblin", 15, 3, 7, 8,
-		0.15, 0.10, 0.20,
-		Attack{Name: "Club Strike", Damage: 3},
-		Attack{Name: "Rock Throw", Damage: 2},
+	Kobold = NewEnemyTemplate("kobold", "Kobold", 14, 3, 7, 6,
+		0.13, 0.11, 0.17,
+		Attack{Name: "Dagger Stab", Damage: 3},
+		Attack{Name: "Sneak Attack", Damage: 4},
 	).WithDrops(
-		DropRate{Item: item.SmallHealPotion, Chance: 0.40, Quantity: 1},
+		DropRate{Item: item.KoboldFang, Chance: 0.55, Quantity: 1},
+		DropRate{Item: item.SmallHealPotion, Chance: 0.08, Quantity: 1},
+		DropRate{Item: item.PoisonDartBook, Chance: 0.08, Quantity: 1}, // Petit mob sournois
+	)
+
+	SkeletonWarrior = NewEnemyTemplate("skeleton_warrior", "Skeleton Warrior", 45, 8, 5, 18,
+		0.17, 0.13, 0.19,
+		Attack{Name: "Bone Slash", Damage: 8},
+		Attack{Name: "Rattle Strike", Damage: 6},
+	).WithDrops(
+		DropRate{Item: item.BoneShard, Chance: 0.70, Quantity: 2},
+		DropRate{Item: item.HealPotion, Chance: 0.10, Quantity: 1},
+		DropRate{Item: item.LifeDrainBook, Chance: 0.06, Quantity: 1}, // Thématique Mort-vivant
+	)
+
+	Harpy = NewEnemyTemplate("harpy", "Harpy", 35, 6, 14, 16,
+		0.16, 0.12, 0.20,
+		Attack{Name: "Talon Dive", Damage: 6},
+		Attack{Name: "Shriek", Damage: 4},
+	).WithDrops(
+		DropRate{Item: item.HarpyFeather, Chance: 0.65, Quantity: 2},
+		DropRate{Item: item.SmallHealPotion, Chance: 0.10, Quantity: 1},
+		DropRate{Item: item.IceBarrierBook, Chance: 0.07, Quantity: 1}, // Sort utilitaire/vent/glace
+	)
+
+	Orc = NewEnemyTemplate("orc", "Orc", 55, 9, 5, 20,
+		0.19, 0.14, 0.23,
+		Attack{Name: "Axe Cleave", Damage: 9},
+		Attack{Name: "Shoulder Bash", Damage: 6},
+	).WithDrops(
+		DropRate{Item: item.OrcHide, Chance: 0.70, Quantity: 1},
+		DropRate{Item: item.OrcTusk, Chance: 0.25, Quantity: 1},
+		DropRate{Item: item.HealPotion, Chance: 0.08, Quantity: 1},
+	)
+
+	Ogre = NewEnemyTemplate("ogre", "Ogre", 160, 18, 3, 70,
+		0.24, 0.18, 0.28,
+		Attack{Name: "Club Smash", Damage: 18},
+		Attack{Name: "Ground Slam", Damage: 22},
+	).WithDrops(
+		DropRate{Item: item.OgreClub, Chance: 0.40, Quantity: 1},
 		DropRate{Item: item.HealPotion, Chance: 0.20, Quantity: 1},
-		DropRate{Item: item.WolfFur, Chance: 0.30, Quantity: 1},
+		DropRate{Item: item.EarthquakeBook, Chance: 0.08, Quantity: 1}, // Sort lourd de choc
+	)
+
+	Minotaur = NewEnemyTemplate("minotaur", "Minotaur", 200, 22, 7, 90,
+		0.25, 0.19, 0.29,
+		Attack{Name: "Horn Charge", Damage: 22},
+		Attack{Name: "Axe Swing", Damage: 18},
+	).WithDrops(
+		DropRate{Item: item.MinotaurHorn, Chance: 0.35, Quantity: 1},
+		DropRate{Item: item.LargeHealPotion, Chance: 0.15, Quantity: 1},
+		DropRate{Item: item.DivineSmiteBook, Chance: 0.05, Quantity: 1}, // Gros dégâts de zone / sacrer
+	)
+
+	Wyrm = NewEnemyTemplate("wyrm", "Wyrm", 260, 28, 6, 130,
+		0.27, 0.21, 0.31,
+		Attack{Name: "Venom Bite", Damage: 24},
+		Attack{Name: "Tail Sweep", Damage: 28},
+	).WithDrops(
+		DropRate{Item: item.WyrmScale, Chance: 0.40, Quantity: 1},
+		DropRate{Item: item.LargeHealPotion, Chance: 0.20, Quantity: 1},
+		DropRate{Item: item.ChainLightningBook, Chance: 0.08, Quantity: 1}, // Créature magique avancée
+	)
+
+	Wyvern = NewEnemyTemplate("wyvern", "Wyvern", 400, 35, 9, 250,
+		0.30, 0.24, 0.35,
+		Attack{Name: "Ruby Gaze", Damage: 30},
+		Attack{Name: "Serpent Coil", Damage: 35},
+		Attack{Name: "Wing Slash", Damage: 25},
+	).WithDrops(
+		DropRate{Item: item.WyvernScale, Chance: 0.60, Quantity: 1},
+		DropRate{Item: item.WyvernFang, Chance: 0.25, Quantity: 1},
+		DropRate{Item: item.TitanicHealPotion, Chance: 0.30, Quantity: 1},
+		DropRate{Item: item.ChainLightningBook, Chance: 0.12, Quantity: 1}, // Boss / Élite
+		DropRate{Item: item.DivineSmiteBook, Chance: 0.08, Quantity: 1},
 	)
 )
