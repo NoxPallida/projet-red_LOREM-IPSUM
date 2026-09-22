@@ -98,7 +98,7 @@ func RunGame(ch *character.Character, w *world.World, p *world.Player) error {
 		c.Clear()
 		layers := []tui.FuncLayer{worldMapLayer(w, p)}
 		c.DrawFuncLayers(layers)
-		c.DrawLayer(hudLayer(c, ch))
+		c.DrawLayer(displayInfo(c, ch))
 		_ = tui.FlushStyled(out, c)
 	}
 
