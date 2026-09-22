@@ -144,6 +144,7 @@ func ShowStory(in io.Reader, out io.Writer, path string) (*character.Character, 
 	ch.ManaMax = chosenMana
 
 	// 4. On affiche le resultat tire au sort.
+	//
 	destinyTexts := []string{
 		"Welcome, " + name + " the " + chosenSubclass.String() + " (" + chosenClass.String() + ").",
 		"Destiny grants you " + strconv.Itoa(int(chosenMana)) + " mana. Your adventure begins now! [SPACE] Begin",
