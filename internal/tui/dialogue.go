@@ -35,41 +35,19 @@ func Dialogue(c *Canvas, out io.Writer, in io.Reader, texts ...string) bool {
 		return false
 	}
 
-	// On lit les touches en fond : ReadKey bloque, donc goroutine
-	// qui pousse dans un canal. EOF = on envoie ECHAP (quitter
-	// proprement, comme avant) puis on ferme. done permet a la
-	// goroutine de mourir quand Dialogue rend la main.
-	keys := make(chan Event, 16)
-	done := make(chan struct{})
-	defer close(done)
-	go func() {
-		defer close(keys)
-		for {
-			ev, err := ReadKey(in)
-			if err != nil {
-				select {
-				case keys <- Event{K: KeyEsc}:
-				case <-done:
-				}
-				return
-			}
-			select {
-			case keys <- ev:
-			case <-done:
-				return
-			}
-		}
-	}()
+	// Pompe a touches partagee (voir prompt.go).
+	keys, stop := PumpKeys(in)
+	defer stop()
 
 	for idx, s := range texts {
 		plain, colors := ParseMarkup(s)
-		box := layoutDialogue(c, plain)
+		box := LayoutBottomBox(c, "DIALOGUE", plain)
 		tw := NewTypewriter(plain)
 
 		// Etape 1 : ecriture lettre par lettre, interruptible.
 		for !IsDone(tw) {
 			Tick(tw, 1)
-			drawDialogue(c, box, colors, VisibleLen(tw))
+			DrawTextBox(c, box, colors, VisibleLen(tw), "[ESPACE] suite  [q] quitter")
 			if err := FlushStyled(out, c); err != nil {
 				return true
 			}
@@ -79,12 +57,12 @@ func Dialogue(c *Canvas, out io.Writer, in io.Reader, texts ...string) bool {
 				if !ok {
 					return true
 				}
-				if isQuit(ev) {
+				if IsQuit(ev) {
 					return true
 				}
-				if isSkip(ev) {
+				if IsConfirm(ev) {
 					Skip(tw)
-					drawDialogue(c, box, colors, len([]rune(plain)))
+					DrawTextBox(c, box, colors, len([]rune(plain)), "[ESPACE] suite  [q] quitter")
 					_ = FlushStyled(out, c)
 				}
 				// Les autres touches restent dans le canal : la
@@ -95,7 +73,7 @@ func Dialogue(c *Canvas, out io.Writer, in io.Reader, texts ...string) bool {
 		}
 
 		// Etape 2 : texte complet, attend ESPACE/ENTREE pour suite.
-		drawDialogue(c, box, colors, len([]rune(plain)))
+		DrawTextBox(c, box, colors, len([]rune(plain)), "[ESPACE] suite  [q] quitter")
 		_ = FlushStyled(out, c)
 
 		// Dernier texte : on sort apres un appui (comme quitter).
@@ -114,119 +92,26 @@ func Dialogue(c *Canvas, out io.Writer, in io.Reader, texts ...string) bool {
 	return false
 }
 
-// layoutDialogue calcule ou et comment dessiner la boite.
-type dialogueBox struct {
-	x, y, bw, bh, inner int
-	lines               []string
-}
-
-func layoutDialogue(c *Canvas, plain string) dialogueBox {
-	inner := c.W - 8
-	if inner < 10 {
-		inner = 10
-	}
-	lines := WrapText(plain, inner)
-	bw := c.W - 4
-	if bw < 12 {
-		bw = c.W
-	}
-	if bw < 12 {
-		bw = 12
-	}
-	bh := len(lines) + 3
-	if bh < 5 {
-		bh = 5
-	}
-	if bh > c.H {
-		bh = c.H
-	}
-	maxLines := bh - 3
-	if maxLines < 1 {
-		maxLines = 1
-	}
-	if len(lines) > maxLines {
-		lines = lines[:maxLines]
-	}
-	x := 2
-	if x+bw > c.W {
-		x = 0
-	}
-	y := c.H - bh - 1
-	if y < 0 {
-		y = 0
-	}
-	return dialogueBox{x: x, y: y, bw: bw, bh: bh, inner: inner, lines: lines}
-}
-
 // showOne dessine un texte d'un coup sans boucle (in == nil).
 func showOne(c *Canvas, out io.Writer, s string, _ io.Reader) {
 	plain, colors := ParseMarkup(s)
-	box := layoutDialogue(c, plain)
-	drawDialogue(c, box, colors, len([]rune(plain)))
+	box := LayoutBottomBox(c, "DIALOGUE", plain)
+	DrawTextBox(c, box, colors, len([]rune(plain)), "[ESPACE] suite  [q] quitter")
 	_ = FlushStyled(out, c)
-}
-
-// isSkip dit si la touche doit sauter l'anim : ESPACE ou ENTREE.
-func isSkip(ev Event) bool {
-	if ev.K == KeyEnter {
-		return true
-	}
-	if ev.K == KeyRune && ev.R == ' ' {
-		return true
-	}
-	return false
-}
-
-// isQuit dit si la touche doit quitter : q ou ECHAP.
-func isQuit(ev Event) bool {
-	if ev.K == KeyEsc {
-		return true
-	}
-	if ev.K == KeyRune && (ev.R == 'q' || ev.R == 'Q') {
-		return true
-	}
-	return false
 }
 
 // waitNext attend ESPACE/ENTREE (suite) ou q/ECHAP (quitter) ou EOF.
 // Rend true = suite, false = quitter.
 func waitNext(keys <-chan Event) bool {
 	for ev := range keys {
-		if isQuit(ev) {
+		if IsQuit(ev) {
 			return false
 		}
-		if isSkip(ev) {
+		if IsConfirm(ev) {
 			return true
 		}
 	}
 	return false
-}
-
-// drawDialogue redessine la boite + les n premieres lettres.
-func drawDialogue(c *Canvas, box dialogueBox, colors []string, n int) {
-	FillRect(c, box.x, box.y, box.bw, box.bh, ' ')
-	DrawBoxWithTitle(c, box.x, box.y, box.bw, box.bh, "DIALOGUE")
-	drawn := 0
-	for li, line := range box.lines {
-		if drawn >= n {
-			break
-		}
-		base := li * box.inner
-		pos := 0
-		for _, r := range line {
-			if drawn >= n {
-				break
-			}
-			fg := ""
-			if base+pos < len(colors) {
-				fg = colors[base+pos]
-			}
-			c.SetStyled(box.x+2+pos, box.y+1+li, r, fg, "")
-			pos++
-			drawn++
-		}
-	}
-	c.Write(box.x+2, box.y+box.bh-2, "[ESPACE] suite  [q] quitter")
 }
 
 // WrapText coupe s en morceaux de width lettres.

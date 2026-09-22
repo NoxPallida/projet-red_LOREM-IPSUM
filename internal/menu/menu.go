@@ -1,15 +1,12 @@
 package menu
 
 import (
-	"fmt"
 	"io"
 	"os"
 
 	"runa/internal/character"
 	"runa/internal/tui"
 )
-
-const dialogText = "Placeholder : bla bla bleuh bul ezyzkfkf ..."
 
 // Run ouvre l'ecran du menu avec une boite de dialogue en bas.
 //
@@ -22,21 +19,29 @@ const dialogText = "Placeholder : bla bla bleuh bul ezyzkfkf ..."
 // pour verifier ce qui a ete dessine.
 //
 // nil = defaut : in devient os.Stdin, out devient os.Stdout.
-func Run(in io.Reader, out io.Writer) error {
+
+// Setup joue l'intro-histoire (video en boucle + pseudo) et rend
+// le pseudo tape (X). Sans fichier video : rend "", nil.
+func Setup(in io.Reader, out io.Writer, SetupPath string) (string, error) {
 	if in == nil {
 		in = os.Stdin
 	}
 	if out == nil {
 		out = os.Stdout
 	}
-
-	// Taille dynamique du terminal sinon err (skill issue).
-	w, h, err := tui.Size()
-	if err != nil {
-		return fmt.Errorf("menu: %w", err)
+	if _, err := os.Stat(SetupPath); err != nil {
+		return "", nil
 	}
+	return ShowStory(in, out, SetupPath)
+}
 
-	c := tui.NewCanvas(w, h)
+func Run(in io.Reader, out io.Writer, name string) error {
+	if in == nil {
+		in = os.Stdin
+	}
+	if out == nil {
+		out = os.Stdout
+	}
 
 	if err := tui.EnterAltScreen(out); err != nil {
 		return err
@@ -45,10 +50,6 @@ func Run(in io.Reader, out io.Writer) error {
 		_ = tui.ExitAltScreen(out)
 	}()
 
-	if tui.Dialogue(c, out, in, dialogText) {
-		return nil
-	}
-
 	// Suite normale : on entre dans la map monde (map.txt).
-	return StartGame(character.InitCharacter("", character.Human))
+	return StartGame(character.InitCharacter(name, character.Human))
 }

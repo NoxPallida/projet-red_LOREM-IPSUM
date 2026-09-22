@@ -14,6 +14,7 @@ import (
 // introPath : cinematique jouee derriere la boite PLAY au lancement.
 // Absent = pas d'intro, le jeu demarre direct.
 const introPath = "assets/cinematic/videoplayback.cine"
+const SetupPath = "assets/cinematic/soul.cine"
 
 func main() {
 	// Mode raw : chaque touche (ESPACE, fleches...) arrive aussitot.
@@ -48,7 +49,11 @@ func run() int {
 			return 1
 		}
 	}
-	if err := menu.Run(os.Stdin, os.Stdout); err != nil {
+	X, err := menu.Setup(os.Stdin, os.Stdout, SetupPath)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "red:", err)
+	}
+	if err := menu.Run(os.Stdin, os.Stdout, X); err != nil {
 		fmt.Fprintln(os.Stderr, "red:", err)
 		return 1
 	}
