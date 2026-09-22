@@ -38,7 +38,7 @@ var Recipes = []Recipe{
 	{
 		Result: item.AdventurerHat,
 		Ingredients: []Ingredient{
-			{item.RavenFeather, 1},
+			{item.RatHide, 1},
 			{item.BoarLeather, 1},
 		},
 		Price: 5,
