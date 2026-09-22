@@ -33,7 +33,7 @@ func StartGame(ch *character.Character) error {
 	gs := guild.NewGuildStatus()
 	sp := spawner.NewSpawner(pm.Tiles, gs.Rank, time.Now().UnixNano())
 
-	return RunGame(ch, w, p, sp, gs)
+	return RunGame(ch, w, p, sp, gs, pm.StartX, pm.StartY)
 }
 
 // loadRadius couvre tout l'écran visible + marge, même en grand terminal.
@@ -54,7 +54,7 @@ func loadRadius() int {
 // Sans kitty (Windows conhost, vieux terminaux, pipes) : 1 touche =
 // 1 pas, exactement comme avant. Quitter : ECHAP (ou entrée fermée).
 // Le nettoyage (kitty + écran) est fait à la main avant chaque sortie.
-func RunGame(ch *character.Character, w *world.World, p *world.Player, sp *spawner.Spawner, gs *guild.GuildStatus) error {
+func RunGame(ch *character.Character, w *world.World, p *world.Player, sp *spawner.Spawner, gs *guild.GuildStatus, spawnX, spawnY int) error {
 	in := os.Stdin
 	out := os.Stdout
 
@@ -90,13 +90,21 @@ func RunGame(ch *character.Character, w *world.World, p *world.Player, sp *spawn
 	// Remis à nil dès qu'aucun axe du pas courant ne bute plus dessus.
 	var pending *enemies.EnemyInstance
 
-	// render redessine TOUT l'écran : fond effacé, carte, HUD, et
-	// la rencontre en cours par-dessus si elle existe. Déclaré ici
-	// (avant tryAxis) car tryAxis l'appelle après un combat.
+	// inIn non-nil = le joueur est DANS un batiment : la carte monde
+	// est remplacee par la piece, le reste (HUD, rencontres) pareil.
+	var inIn *InteriorSession
+
+	// render redessine TOUT l'écran : fond effacé, carte (ou piece),
+	// HUD, et la rencontre en cours par-dessus si elle existe.
+	// Déclaré ici (avant tryAxis) car tryAxis l'appelle après un combat.
 	render := func() {
 		c.Clear()
-		layers := []tui.FuncLayer{worldMapLayer(w, p, sp)}
-		c.DrawFuncLayers(layers)
+		if inIn != nil {
+			drawInterior(c, inIn)
+		} else {
+			layers := []tui.FuncLayer{worldMapLayer(w, p, sp)}
+			c.DrawFuncLayers(layers)
+		}
 		c.DrawLayer(displayInfo(c, ch, gs))
 		if pending != nil {
 			c.DrawLayer(encounterLayer(c, pending))
@@ -119,7 +127,13 @@ func RunGame(ch *character.Character, w *world.World, p *world.Player, sp *spawn
 				ch.GainExp(enemy.XPDrop)
 				guild.RegisterKill(gs, enemy.Template.ID) // fait avancer les quêtes actives ; le rendu se fait à la guilde
 			}
-			// défaite ou fuite : rien de spécial ici, le joueur garde ses HP courants (0 si vaincu — à gérer si tu veux un "game over" dédié)
+			// defaite : ecran de mort puis respawn au spawn avec 50 % des PV.
+			if ch.Hp == 0 {
+				showDeathScreen(in, out, c)
+				respawn(p, spawnX, spawnY, ch)
+				pending = nil
+				w.EnsureLoaded(p.X, p.Y, radius)
+			}
 
 			render() // redessine la carte par-dessus l'écran de combat
 			return false
@@ -128,9 +142,30 @@ func RunGame(ch *character.Character, w *world.World, p *world.Player, sp *spawn
 	}
 
 	// step avance de (dx, dy) : x puis y, chacun teste sa case.
+	// Dans un batiment : meme principe sur la grille de la piece ;
+	// arriver sur la porte interieure fait sortir (retour dehors).
+	// Dehors : arriver sur une porte 'E' fait entrer dans le batiment.
 	step := func(dx, dy int) {
-		moved := false
 		pending = nil // reset : seul un axe bloqué par un monstre le remet à jour ci-dessous
+		if inIn != nil {
+			if dx < 0 {
+				inIn.move(world.West)
+			} else if dx > 0 {
+				inIn.move(world.East)
+			}
+			if dy < 0 {
+				inIn.move(world.North)
+			} else if dy > 0 {
+				inIn.move(world.South)
+			}
+			if inIn.onDoor() {
+				p.X, p.Y = inIn.EntryX, inIn.EntryY
+				inIn = nil
+				w.EnsureLoaded(p.X, p.Y, radius)
+			}
+			return
+		}
+		moved := false
 		if dx < 0 {
 			moved = tryAxis(world.West) || moved
 		} else if dx > 0 {
@@ -143,6 +178,9 @@ func RunGame(ch *character.Character, w *world.World, p *world.Player, sp *spawn
 		}
 		if moved {
 			w.EnsureLoaded(p.X, p.Y, radius)
+			if sess := enterInterior(w, p); sess != nil {
+				inIn = sess
+			}
 		}
 	}
 
@@ -170,7 +208,26 @@ func RunGame(ch *character.Character, w *world.World, p *world.Player, sp *spawn
 			}
 			key, dx, dy, ok := normDir(ev)
 			if !ok {
-				continue // espace, entrée... : rien à faire en jeu
+				// Espace ou Entrée : interaction avec le PNJ si adjacent dans un intérieur
+				if (ev.K == tui.KeyEnter || (ev.K == tui.KeyRune && ev.R == ' ')) && !rel {
+					if inIn != nil && inIn.isNearNPC() {
+						if kitty {
+							tui.PopKitty(out)
+						}
+						switch inIn.In.Kind {
+						case world.ZoneShop:
+							RunShopMenu(in, out, c, ch, render)
+						case world.ZoneGuild:
+							RunGuildMenu(in, out, c, ch, gs, render)
+						}
+						if kitty {
+							tui.PushKitty(out)
+						}
+						render()
+						pressed = true
+					}
+				}
+				continue
 			}
 			if !kitty {
 				// Classique : 1 touche = 1 pas, de suite.

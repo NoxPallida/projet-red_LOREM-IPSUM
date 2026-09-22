@@ -16,12 +16,16 @@ type Strength int
 // (dans spell, pour éviter un import cycle), mais reste utilisable
 // ici sous le nom character.Class / character.Human / etc.
 type Class = spell.Class
+type Subclass = spell.Subclass
 
 const (
 	Human = spell.Human
 	Elf   = spell.Elf
 	Dwarf = spell.Dwarf
 )
+
+var AllClasses = spell.AllClasses
+var SubclassesForClass = spell.SubclassesForClass
 
 func (s Speed) Speed() uint8 {
 	switch Class(s) {
@@ -65,6 +69,7 @@ func (m Mana) Mana() uint16 {
 type Character struct {
 	Name              string
 	Class             Class
+	Subclass          Subclass
 	level             uint8 // privé : accès via Level(), pour satisfaire guild.Member/etc.
 	XP                uint16
 	Hp                uint16

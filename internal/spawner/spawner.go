@@ -53,10 +53,14 @@ func NewSpawner(tiles [][]world.Tile, rank guild.Rank, seed int64) *Spawner {
 	for y, row := range tiles {
 		for x, t := range row {
 			if spawnableKinds[t.Kind] {
+				if isTrainingGround(x, y) {
+					continue
+				}
 				s.candidates = append(s.candidates, [2]int{x, y})
 			}
 		}
 	}
+	s.spawnTrainingGoblin()
 	s.Repopulate(rank)
 	return s
 }
@@ -148,7 +152,21 @@ func (s *Spawner) EnemyAt(x, y int) (*enemies.EnemyInstance, bool) {
 // pour que le remplaçant profite d'une éventuelle promotion récente.
 func (s *Spawner) Kill(x, y int, rank guild.Rank) {
 	delete(s.mobs, [2]int{x, y})
+	if isTrainingGround(x, y) {
+		s.spawnTrainingGoblin()
+		return
+	}
 	if pos, ok := s.nearbyFreePosition(x, y); ok {
 		s.spawnAt(pos[0], pos[1], rank)
+	}
+}
+
+func isTrainingGround(x, y int) bool {
+	return x >= 43 && x <= 51 && y >= 173 && y <= 181
+}
+
+func (s *Spawner) spawnTrainingGoblin() {
+	if inst, ok := enemies.NewEnemyInstance("goblin", 1); ok {
+		s.mobs[[2]int{47, 177}] = inst
 	}
 }

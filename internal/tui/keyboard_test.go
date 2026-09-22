@@ -105,3 +105,37 @@ func TestQueryKitty(t *testing.T) {
 		t.Error("QueryKitty devrait dire non sur EOF")
 	}
 }
+
+func TestReadKeyExtended(t *testing.T) {
+	cases := []struct {
+		in string
+		k  Key
+		r  rune
+	}{
+		{"\x1b[6~", KeyNone, 0},      // PageDown ne doit PAS renvoyer KeyEsc !
+		{"\x1b[5~", KeyNone, 0},      // PageUp
+		{"\x1b[2~", KeyNone, 0},      // Insert (KP 0)
+		{"\x1b[1~", KeyNone, 0},      // Home
+		{"\x1b[4~", KeyNone, 0},      // End
+		{"\x1b[3~", KeyBackspace, 0}, // Delete
+		{"\x1b[A", KeyUp, 0},         // Flèche haut
+		{"\x1b[B", KeyDown, 0},       // Flèche bas
+		{"\x1b[C", KeyRight, 0},      // Flèche droite
+		{"\x1b[D", KeyLeft, 0},       // Flèche gauche
+		{"\x1bOp", KeyRune, '0'},     // Keypad 0 (SS3)
+		{"\x1bOq", KeyRune, '1'},     // Keypad 1 (SS3)
+		{"\x1bOM", KeyEnter, 0},      // Keypad Enter (SS3)
+		{"\x1b", KeyEsc, 0},          // Vrai ECHAP seul
+		{"a", KeyRune, 'a'},
+	}
+	for _, tc := range cases {
+		ev, err := ReadKey(strings.NewReader(tc.in))
+		if err != nil {
+			t.Errorf("ReadKey(%q): err=%v", tc.in, err)
+			continue
+		}
+		if ev.K != tc.k || ev.R != tc.r {
+			t.Errorf("ReadKey(%q) = %+v, want K=%v R=%q", tc.in, ev, tc.k, tc.r)
+		}
+	}
+}

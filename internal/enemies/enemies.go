@@ -177,4 +177,10 @@ var (
 		Attack{Name: "Coup de massue", Damage: 15},
 		Attack{Name: "Écrasement", Damage: 20},
 	)
+
+	Goblin = NewEnemyTemplate("goblin", "Gobelin", 15, 3, 7, 8,
+		0.15, 0.10, 0.20,
+		Attack{Name: "Coup de gourdin", Damage: 3},
+		Attack{Name: "Jet de caillou", Damage: 2},
+	)
 )

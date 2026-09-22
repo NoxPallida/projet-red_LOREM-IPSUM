@@ -77,6 +77,8 @@ func enemyGlyph(e *enemies.EnemyInstance) rune {
 		return 'b'
 	case "troll":
 		return 'T'
+	case "goblin":
+		return 'g'
 	default:
 		return 'm'
 	}
@@ -94,6 +96,8 @@ func enemyColor(e *enemies.EnemyInstance) string {
 		return tui.FGRed
 	case "troll":
 		return tui.FGMagenta
+	case "goblin":
+		return tui.FGGreen
 	default:
 		return tui.FGLightRed
 	}
