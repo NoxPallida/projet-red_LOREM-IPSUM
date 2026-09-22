@@ -165,24 +165,51 @@ func BaseAttackFor(class Class, subclass Subclass) Spell {
 }
 
 // --- Sorts et attaques définis ---
-
+// id name dmg mana method lvl race classe
 var (
 	// Level 1: Class base attacks (0 mana cost)
-	Punch       = NewSpell("punch", "Punch", 6, 0, ObtainByLevel, 1, Human, SubclassHumanCQC)
-	ArcaneSpark = NewSpell("arcane_spark", "Arcane Spark", 7, 0, ObtainByLevel, 1, Human, SubclassHumanMage)
-	QuickShot   = NewSpell("quick_shot", "Quick Shot", 6, 0, ObtainByLevel, 1, Elf, SubclassElfArcher)
-	SpiritOrb   = NewSpell("spirit_orb", "Spirit Orb", 7, 0, ObtainByLevel, 1, Elf, SubclassElfSpiritMage)
-	HeavyStrike = NewSpell("heavy_strike", "Heavy Strike", 7, 0, ObtainByLevel, 1, Dwarf, SubclassDwarfWarrior)
-	FuriousBlow = NewSpell("furious_blow", "Furious Strike", 8, 0, ObtainByLevel, 1, Dwarf, SubclassDwarfBerserker)
+	Punch       = NewSpell("punch", "Punch", 2, 0, ObtainByLevel, 2, Human, SubclassHumanCQC)
+	ArcaneSpark = NewSpell("arcane_spark", "Arcane Spark", 2, 0, ObtainByLevel, 1, Human, SubclassHumanMage)
+	QuickShot   = NewSpell("quick_shot", "Quick Shot", 2, 0, ObtainByLevel, 1, Elf, SubclassElfArcher)
+	SpiritOrb   = NewSpell("spirit_orb", "Spirit Orb", 2, 0, ObtainByLevel, 1, Elf, SubclassElfSpiritMage)
+	HeavyStrike = NewSpell("heavy_strike", "Heavy Strike", 2, 0, ObtainByLevel, 1, Dwarf, SubclassDwarfWarrior)
+	FuriousBlow = NewSpell("furious_blow", "Furious Strike", 2, 0, ObtainByLevel, 1, Dwarf, SubclassDwarfBerserker)
 
-	// Level 3: Advanced skills (mana cost)
-	Slash       = NewSpell("slash", "Simple Slash", 15, 5, ObtainByLevel, 3, Human, SubclassHumanCQC)
-	ArcaneBolt  = NewSpell("arcane_bolt", "Arcane Bolt", 14, 8, ObtainByLevel, 3, Human, SubclassHumanMage)
-	PreciseShot = NewSpell("precise_shot", "Precise Shot", 14, 6, ObtainByLevel, 3, Elf, SubclassElfArcher)
-	NatureHeal  = NewSpell("nature_heal", "Nature Heal", 0, 12, ObtainByLevel, 3, Elf, SubclassElfSpiritMage)
-	ShieldBash  = NewSpell("shield_bash", "Shield Bash", 15, 5, ObtainByLevel, 3, Dwarf, SubclassDwarfWarrior)
-	RageStrike  = NewSpell("rage_strike", "Rage Strike", 18, 8, ObtainByLevel, 3, Dwarf, SubclassDwarfBerserker)
+	// Level 10: Advanced skills (mana cost)
+	Slash       = NewSpell("slash", "Simple Slash", 15, 5, ObtainByLevel, 10, Human, SubclassHumanCQC)
+	ArcaneBolt  = NewSpell("arcane_bolt", "Arcane Bolt", 14, 8, ObtainByLevel, 10, Human, SubclassHumanMage)
+	PreciseShot = NewSpell("precise_shot", "Precise Shot", 14, 6, ObtainByLevel, 10, Elf, SubclassElfArcher)
+	NatureHeal  = NewSpell("nature_heal", "Nature Heal", 0, 12, ObtainByLevel, 10, Elf, SubclassElfSpiritMage)
+	ShieldBash  = NewSpell("shield_bash", "Shield Bash", 15, 5, ObtainByLevel, 10, Dwarf, SubclassDwarfWarrior)
+	RageStrike  = NewSpell("rage_strike", "Rage Strike", 18, 8, ObtainByLevel, 10, Dwarf, SubclassDwarfBerserker)
+
+	// Level 9-50 : Human Mage, la voie la plus fournie en sorts (progression arcanique complète)
+	FrostShard     = NewSpell("frost_shard", "Frost Shard", 24, 12, ObtainByLevel, 9, Human, SubclassHumanMage)
+	LightningSurge = NewSpell("lightning_surge", "Lightning Surge", 34, 15, ObtainByLevel, 15, Human, SubclassHumanMage)
+	ArcaneNova     = NewSpell("arcane_nova", "Arcane Nova", 48, 20, ObtainByLevel, 24, Human, SubclassHumanMage)
+	MeteorShard    = NewSpell("meteor_shard", "Meteor Shard", 65, 26, ObtainByLevel, 35, Human, SubclassHumanMage)
+	ArchmagesWrath = NewSpell("archmages_wrath", "Archmage's Wrath", 85, 32, ObtainByLevel, 50, Human, SubclassHumanMage)
+
+	// Level 9-50 : Elf Spirit Mage, magie de la nature, aussi fournie que le mage humain
+	ThornLash       = NewSpell("thorn_lash", "Thorn Lash", 22, 11, ObtainByLevel, 9, Elf, SubclassElfSpiritMage)
+	WildfireBloom   = NewSpell("wildfire_bloom", "Wildfire Bloom", 32, 14, ObtainByLevel, 15, Elf, SubclassElfSpiritMage)
+	AncestralSurge  = NewSpell("ancestral_surge", "Ancestral Surge", 46, 19, ObtainByLevel, 24, Elf, SubclassElfSpiritMage)
+	TempestCall     = NewSpell("tempest_call", "Tempest Call", 62, 24, ObtainByLevel, 35, Elf, SubclassElfSpiritMage)
+	WorldTreesWrath = NewSpell("world_trees_wrath", "World Tree's Wrath", 80, 30, ObtainByLevel, 50, Elf, SubclassElfSpiritMage)
+
+	// Level 20 : un seul sort avancé de plus pour les voies peu magiques
+	CrossCut         = NewSpell("cross_cut", "Cross Cut", 26, 9, ObtainByLevel, 20, Human, SubclassHumanCQC)
+	PiercingArrow    = NewSpell("piercing_arrow", "Piercing Arrow", 25, 9, ObtainByLevel, 20, Elf, SubclassElfArcher)
+	EarthbreakerSlam = NewSpell("earthbreaker_slam", "Earthbreaker Slam", 27, 9, ObtainByLevel, 20, Dwarf, SubclassDwarfWarrior)
+	BloodfuryRampage = NewSpell("bloodfury_rampage", "Bloodfury Rampage", 30, 10, ObtainByLevel, 20, Dwarf, SubclassDwarfBerserker)
 
 	// Spells obtained by book
-	Fireball = NewSpell("fireball", "Fireball", 20, 15, ObtainByBook, 0, ClassAny, SubclassAny)
+	Fireball       = NewSpell("fireball", "Fireball", 20, 10, ObtainByBook, 0, ClassAny, SubclassAny)
+	Heal           = NewSpell("heal", "Heal", 0, 15, ObtainByBook, 0, ClassAny, SubclassAny)
+	ShadowBolt     = NewSpell("shadow_bolt", "Shadow Bolt", 25, 12, ObtainByBook, 0, ClassAny, SubclassAny)
+	PoisonDart     = NewSpell("poison_dart", "Poison Dart", 18, 8, ObtainByBook, 0, ClassAny, SubclassAny)
+	ChainLightning = NewSpell("chain_lightning", "Chain Lightning", 35, 18, ObtainByBook, 0, ClassAny, SubclassAny)
+	DivineSmite    = NewSpell("divine_smite", "Divine Smite", 40, 20, ObtainByBook, 0, ClassAny, SubclassAny)
+	LifeDrain      = NewSpell("life_drain", "Life Drain", 22, 11, ObtainByBook, 0, ClassAny, SubclassAny)
+	Earthquake     = NewSpell("earthquake", "Earthquake", 50, 25, ObtainByBook, 0, ClassAny, SubclassAny)
 )

@@ -11,13 +11,13 @@ import (
 // PoolByRank liste les IDs de monstres qui peuvent apparaître à un rang
 // de guilde donné.
 var PoolByRank = map[guild.Rank][]string{
-	guild.RankF: {"rat"},
-	guild.RankE: {"rat", "wolf"},
-	guild.RankD: {"rat", "wolf", "boar"},
-	guild.RankC: {"rat", "wolf", "boar", "troll"},
-	guild.RankB: {"rat", "wolf", "boar", "troll"},
-	guild.RankA: {"rat", "wolf", "boar", "troll"},
-	guild.RankS: {"rat", "wolf", "boar", "troll"},
+	guild.RankF: {"rat", "slime", "goblin", "kobold"},
+	guild.RankE: {"rat", "slime", "goblin", "kobold", "hobgoblin", "wolf", "boar"},
+	guild.RankD: {"rat", "slime", "goblin", "kobold", "hobgoblin", "wolf", "boar", "skeleton_warrior", "harpy"},
+	guild.RankC: {"rat", "slime", "goblin", "kobold", "hobgoblin", "wolf", "boar", "skeleton_warrior", "harpy", "orc", "troll"},
+	guild.RankB: {"rat", "slime", "goblin", "kobold", "hobgoblin", "wolf", "boar", "skeleton_warrior", "harpy", "orc", "troll", "ogre", "minotaur"},
+	guild.RankA: {"rat", "slime", "goblin", "kobold", "hobgoblin", "wolf", "boar", "skeleton_warrior", "harpy", "orc", "troll", "ogre", "minotaur", "wyrm"},
+	guild.RankS: {"rat", "slime", "goblin", "kobold", "hobgoblin", "wolf", "boar", "skeleton_warrior", "harpy", "orc", "troll", "ogre", "minotaur", "wyrm", "wyvern"},
 }
 
 // Population : nombre total de monstres présents sur la carte en

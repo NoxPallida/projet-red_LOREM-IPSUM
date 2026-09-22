@@ -35,19 +35,17 @@ type CatalogEntry struct {
 }
 
 var Catalog = []CatalogEntry{
-	{item.HealPotion, 3},
-	{item.PoisonPotion, 6},
-	{item.FireballBook, 25},
-	{item.WolfFur, 2},
-	{item.TrollHide, 7},
-	{item.BoarLeather, 3},
-	{item.RavenFeather, 1},
+	{item.SmallHealPotion, 2},
+	{item.HealPotion, 10},
+	{item.LargeHealPotion, 20},
+	{item.TitanicHealPotion, 30},
+	{item.PoisonPotion, 15},
 }
 
 // InventoryUpgradePrice : prix de l'augmentation d'inventaire.
 // Le README le liste explicitement comme "à définir avec le groupe" —
 // ne pas l'inventer silencieusement, cette valeur est un placeholder.
-const InventoryUpgradePrice uint16 = 0 // TODO: décider avec le groupe
+const InventoryUpgradePrice uint16 = 0
 
 type PurchaseResult int
 
