@@ -64,22 +64,26 @@ func (s *InteriorSession) onDoor() bool {
 	return s != nil && s.PX == s.In.DoorX && s.PY == s.In.DoorY
 }
 
+// near dit si (px,py) touche (x,y) : les 8 cases autour incluses.
+func near(px, py, x, y int) bool {
+	dx := px - x
+	if dx < 0 {
+		dx = -dx
+	}
+	dy := py - y
+	if dy < 0 {
+		dy = -dy
+	}
+	return dx <= 1 && dy <= 1
+}
+
 // isNearChest indique si le joueur est sur une case adjacente au coffre.
-// Meme regle que isNearNPC (8 cases autour incluses).
 // Faux s'il n'y a pas de coffre dans la piece (ChestX < 0).
 func (s *InteriorSession) isNearChest() bool {
 	if s == nil || s.In.ChestX < 0 {
 		return false
 	}
-	dx := s.PX - s.In.ChestX
-	dy := s.PY - s.In.ChestY
-	if dx < 0 {
-		dx = -dx
-	}
-	if dy < 0 {
-		dy = -dy
-	}
-	return dx <= 1 && dy <= 1
+	return near(s.PX, s.PY, s.In.ChestX, s.In.ChestY)
 }
 
 // isNearNPC indique si le joueur est sur une case adjacente au PNJ de la piece.
@@ -87,15 +91,7 @@ func (s *InteriorSession) isNearNPC() bool {
 	if s == nil {
 		return false
 	}
-	dx := s.PX - s.In.NPC.X
-	dy := s.PY - s.In.NPC.Y
-	if dx < 0 {
-		dx = -dx
-	}
-	if dy < 0 {
-		dy = -dy
-	}
-	return dx <= 1 && dy <= 1
+	return near(s.PX, s.PY, s.In.NPC.X, s.In.NPC.Y)
 }
 
 // drawInterior : fond noir explicite sur tout l'ecran, piece centree,

@@ -35,7 +35,7 @@ func ShowIntro(out io.Writer, in io.Reader, path string) error {
 // storyTexts : the beginning story told while soul.cine plays.
 var storyTexts = []string{
 	"... . . .. Hey ... Wake up!! ",
-	"Listen closely, traveler. The village of LOREM is in danger.",
+	"Listen closely, traveler. The village of runa is in danger.",
 	"Shadows are approaching, and we need a hero. So... what is your name?",
 }
 
@@ -131,14 +131,9 @@ func ShowStory(in io.Reader, out io.Writer, path string) (*character.Character, 
 		name = "Traveler"
 	}
 
-	// 3. Le joueur choisit sa race, la classe en decoule.
-	// Plus de random : 1re sous-classe de la race (ou Any si aucune).
+	// 3. Le joueur choisit sa race, puis sa classe parmi celles de la race.
 	chosenClass := chooseRace(c, out, keys, m, &frame)
-	subs := spell.SubclassesForClass(chosenClass)
-	chosenSubclass := spell.SubclassAny
-	if len(subs) > 0 {
-		chosenSubclass = subs[0]
-	}
+	chosenSubclass := chooseSubclass(c, out, keys, m, &frame, chosenClass)
 	chosenMana := character.Mana(chosenClass).Mana()
 	if chosenMana == 0 {
 		chosenMana = 25
@@ -149,6 +144,7 @@ func ShowStory(in io.Reader, out io.Writer, path string) (*character.Character, 
 	ch.ManaMax = chosenMana
 
 	// 4. On affiche le resultat tire au sort.
+	//
 	destinyTexts := []string{
 		"Welcome, " + name + " the " + chosenSubclass.String() + " (" + chosenClass.String() + ").",
 		"Destiny grants you " + strconv.Itoa(int(chosenMana)) + " mana. Your adventure begins now! [SPACE] Begin",
@@ -234,6 +230,60 @@ func chooseRace(c *tui.Canvas, out io.Writer, keys <-chan tui.Event, m cine.Movi
 			case tui.KeyRune:
 				if ev.R == ' ' {
 					return races[cursor]
+				}
+			}
+		case <-time.After(50 * time.Millisecond):
+		}
+	}
+}
+
+// chooseSubclass affiche le menu de choix de classe pour la race donnee.
+// ↑/↓ pour naviguer, ENTREE/ESPACE pour valider. EOF ou aucune
+// sous-classe = 1re de la liste (ou Any si la race n'en a pas).
+func chooseSubclass(c *tui.Canvas, out io.Writer, keys <-chan tui.Event, m cine.Movie, frame *int, race character.Class) character.Subclass {
+	subs := spell.SubclassesForClass(race)
+	if len(subs) == 0 {
+		return spell.SubclassAny
+	}
+	cursor := 0
+	bw, bh := 36, len(subs)+5
+	bx, by := tui.CenteredBox(c.W, c.H, bw, bh)
+
+	for {
+		c.Clear()
+		if len(m.Frames) > 0 {
+			cine.DrawFrame(c, m, (*frame)%len(m.Frames))
+			(*frame)++
+		}
+		tui.FillStyled(c, bx, by, bw, bh, ' ', "", tui.BGBlack)
+		tui.DrawBoxWithTitle(c, bx, by, bw, bh, "CHOOSE YOUR CLASS")
+		c.WriteStyled(bx+3, by+2, "Choose your class:", tui.FGBrightWhite, tui.BGBlack)
+		for i, s := range subs {
+			prefix := "  [ ] "
+			fg := tui.FGWhite
+			if i == cursor {
+				prefix = "> [X] "
+				fg = tui.FGLightGreen
+			}
+			c.WriteStyled(bx+4, by+4+i, prefix+s.String(), fg, tui.BGBlack)
+		}
+		_ = tui.FlushStyled(out, c)
+
+		select {
+		case ev, ok := <-keys:
+			if !ok {
+				return subs[0]
+			}
+			switch ev.K {
+			case tui.KeyUp:
+				cursor = (cursor - 1 + len(subs)) % len(subs)
+			case tui.KeyDown:
+				cursor = (cursor + 1) % len(subs)
+			case tui.KeyEnter:
+				return subs[cursor]
+			case tui.KeyRune:
+				if ev.R == ' ' {
+					return subs[cursor]
 				}
 			}
 		case <-time.After(50 * time.Millisecond):

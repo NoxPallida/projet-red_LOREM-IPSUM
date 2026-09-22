@@ -2,6 +2,8 @@ package menu
 
 import (
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"runa/internal/character"
@@ -129,6 +131,23 @@ func RunGame(ch *character.Character, w *world.World, p *world.Player, sp *spawn
 				for _, it := range cb.DroppedItems {
 					_ = ch.Inventory.AddItem(it, 1)
 				}
+				// Butin : on le dit au joueur au lieu de l'ajouter en
+				// silence (le log du combat est efface par render()).
+				if len(cb.DroppedItems) > 0 {
+					if kitty {
+						tui.PopKitty(out)
+					}
+					names := make([]string, 0, len(cb.DroppedItems))
+					for _, it := range cb.DroppedItems {
+						names = append(names, it.Name())
+					}
+					tui.Dialogue(c, out, in,
+						"Victoire ! +"+strconv.Itoa(int(enemy.XPDrop))+" XP.",
+						"Butin : "+strings.Join(names, ", ")+".")
+					if kitty {
+						tui.PushKitty(out)
+					}
+				}
 			}
 			// defaite : ecran de mort puis respawn au spawn avec 50 % des PV.
 			if ch.Hp == 0 {
@@ -240,13 +259,21 @@ func RunGame(ch *character.Character, w *world.World, p *world.Player, sp *spawn
 						if kitty {
 							tui.PopKitty(out)
 						}
-						switch inIn.In.Kind {
-						case world.ZoneShop:
-							RunShopMenu(in, out, c, ch, render)
-						case world.ZoneForge:
-							RunForgeMenu(in, out, c, ch, render)
-						case world.ZoneGuild:
-							RunGuildMenu(in, out, c, ch, gs, render)
+						// Le PNJ lache sa vanne d'abord. S'il est parti
+						// (q/ECHAP), on n'ouvre pas son menu derriere.
+						openMenu := true
+						if line, ok := npcBanter(inIn.In.Kind); ok {
+							openMenu = !tui.Dialogue(c, out, in, inIn.In.NPC.Name+" : "+line)
+						}
+						if openMenu {
+							switch inIn.In.Kind {
+							case world.ZoneShop:
+								RunShopMenu(in, out, c, ch, render)
+							case world.ZoneForge:
+								RunForgeMenu(in, out, c, ch, render)
+							case world.ZoneGuild:
+								RunGuildMenu(in, out, c, ch, gs, render)
+							}
 						}
 						if kitty {
 							tui.PushKitty(out)
