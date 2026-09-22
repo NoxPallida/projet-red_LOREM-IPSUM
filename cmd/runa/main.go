@@ -6,13 +6,14 @@ import (
 
 	"golang.org/x/term"
 
+	"runa/internal/audio"
 	"runa/internal/menu"
 	"runa/internal/tui"
 )
 
 // introPath : cinematique jouee derriere la boite PLAY au lancement.
 // Absent = pas d'intro, le jeu demarre direct.
-const introPath = "cinematic/videoplayback.cine"
+const introPath = "assets/cinematic/videoplayback.cine"
 
 func main() {
 	// Mode raw : chaque touche (ESPACE, fleches...) arrive aussitot.
@@ -35,6 +36,11 @@ func main() {
 
 // run fait le travail et rend un code de sortie (0 = ok).
 func run() int {
+	// Musique des l'intro : decompressee en memoire, jouee en fond.
+	// Sans carte son ca previent et le jeu continue sans musique.
+	stopMusic := audio.StartOST()
+	defer stopMusic()
+
 	// Intro si le fichier existe, sinon on passe direct au jeu.
 	if _, err := os.Stat(introPath); err == nil {
 		if err := menu.ShowIntro(os.Stdout, os.Stdin, introPath); err != nil {

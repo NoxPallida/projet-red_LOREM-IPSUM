@@ -44,7 +44,10 @@ projet-red_LOREM-IPSUM/
 ├── .github/workflows/ci.yml      # CI : gofmt + vet + lint (sans tests ni build)
 ├── cmd/runa/main.go              # entree du jeu, appelle menu.Run
 ├── cmd/cine/main.go              # convertit video -> .cine, mode play pour tester
+├── assets/embed.go               # embarque ost.mp3 dans le binaire
+├── assets/audio/ost.mp3          # musique (mono 44kHz 32k, ~8 Mo)
 ├── internal/
+│   ├── audio/audio.go            # mp3 memoire + decode + lecture boucle
 │   ├── tui/                      # moteur graphique (pret)
 │   │   ├── ansi.go               # alt-screen, curseur, Flush / FlushStyled
 │   │   ├── box.go                # cadres, titres, remplissage, centrage
