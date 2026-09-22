@@ -6,9 +6,10 @@ import (
 )
 
 const (
-	BaseCapacity = 100
-	UpgradeBonus = 10
-	MaxUpgrades  = 3
+	BaseCapacityI = 10
+	BaseCapacityC = 100
+	UpgradeBonus  = 10
+	MaxUpgrades   = 3
 )
 
 type Slot struct {
@@ -32,16 +33,16 @@ type Chest = Inventory
 
 func NewChest() Chest {
 	return Chest{
-		Slots:    make([]Slot, 0, BaseCapacity),
-		Capacity: BaseCapacity,
+		Slots:    make([]Slot, 0, BaseCapacityC),
+		Capacity: BaseCapacityC,
 		Upgrades: 0,
 	}
 }
 
 func NewInventory() Inventory {
 	return Inventory{
-		Slots:    make([]Slot, 0, BaseCapacity),
-		Capacity: BaseCapacity,
+		Slots:    make([]Slot, 0, BaseCapacityI),
+		Capacity: BaseCapacityI,
 		Upgrades: 0,
 	}
 }

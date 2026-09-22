@@ -1,4 +1,4 @@
-# projet-red_LOREM-IPSUM
+# projet-red_runa
 Projet Red Ynov 2026/2027
 ASCII_ART = """
 
@@ -41,7 +41,7 @@ go test ./...
 ## Fichiers (une ligne chacun)
 
 ```text
-projet-red_LOREM-IPSUM/
+projet-red_runa/
 ├── .github/workflows/ci.yml      # CI : gofmt + vet + lint + tests
 ├── cmd/runa/main.go              # entree du jeu : raw + musique + intro + menu + jeu
 ├── cmd/cine/main.go              # convertit video -> .cine, mode play pour tester
