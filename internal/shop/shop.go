@@ -34,14 +34,6 @@ type CatalogEntry struct {
 	Price uint16
 }
 
-var Catalog = []CatalogEntry{
-	{item.SmallHealPotion, 2},
-	{item.HealPotion, 10},
-	{item.LargeHealPotion, 20},
-	{item.TitanicHealPotion, 30},
-	{item.PoisonPotion, 15},
-}
-
 // InventoryUpgradePrice : prix de l'augmentation d'inventaire.
 // Le README le liste explicitement comme "à définir avec le groupe" —
 // ne pas l'inventer silencieusement, cette valeur est un placeholder.
@@ -128,4 +120,21 @@ func findCatalogEntry(target item.Item) (CatalogEntry, bool) {
 		}
 	}
 	return CatalogEntry{}, false
+}
+
+var Catalog = []CatalogEntry{
+	{item.SmallHealPotion, 2},
+	{item.HealPotion, 10},
+	{item.LargeHealPotion, 20},
+	{item.TitanicHealPotion, 30},
+	{item.PoisonPotion, 15},
+	{item.StarterHat, 1},
+	{item.StarterTunic, 1},
+	{item.StarterPants, 1},
+	{item.StarterBoots, 1},
+	{item.StarterSword, 1},
+	{item.StarterAxe, 1},
+	{item.StarterBow, 1},
+	{item.StarterStaff, 1},
+	{InventoryUpgradePrice, 30},
 }
