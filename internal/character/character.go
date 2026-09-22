@@ -193,6 +193,11 @@ func (c *Character) AddXP(amount uint16) bool {
 			c.XP -= uint16(xpNeeded)
 			c.level += 1
 			levelUp = true
+
+			// --- Bonus de niveau ---
+			c.Strength += 1 // +1 Atk (Force) par niveau
+			c.ManaMax += 3  // +3 Mana Max par niveau
+			c.Mana += 3
 		} else {
 			break
 		}
@@ -208,13 +213,22 @@ func (c *Character) GainExp(amount uint16) {
 	c.AddXP(amount)
 }
 
-// TotalAttack combine la force du personnage et les dégâts de son arme
-// équipée (0 si aucune arme). C'est cette valeur que combat.go utilise
-// pour l'attaque de base.
+// TotalAttack combine la force de base, le bonus de niveau (+1 par niveau au-dessus du niv 1)
+// et les dégâts de l'arme équipée.
 func (c *Character) TotalAttack() uint16 {
-	total := uint16(c.Strength)
+	total := uint16(c.Strength) + uint16(c.level-1)
 	if c.EquippedWeapon != nil {
 		total += uint16(c.EquippedWeapon.Damage)
+	}
+	return total
+}
+
+// GetManaMax retourne le mana max de base + le bonus du niveau (+3 par niveau au-dessus du niv 1)
+// + le bonus de mana fourni par l'arme équipée.
+func (c *Character) GetManaMax() uint16 {
+	total := c.ManaMax + uint16(c.level-1)*3
+	if c.EquippedWeapon != nil {
+		total += uint16(c.EquippedWeapon.Mana)
 	}
 	return total
 }
