@@ -53,6 +53,7 @@ projet-red_LOREM-IPSUM/
 │   │   ├── box.go                # cadres, titres, remplissage, centrage
 │   │   ├── canvas.go             # memoire video (lettre + couleur), rendu brut / style
 │   │   ├── dialogue.go           # Dialogue() : boite en bas + typewriter + couleurs
+│   │   ├── prompt.go             # PumpKeys, TextBox, Draw + Ask/AskKeys (saisie)
 │   │   ├── color.go              # palette 16 couleurs, degrades, balises /RED/, boite en degrade
 │   │   ├── errors.go             # GameError : fichier auto + operation + cause
 │   │   ├── input.go              # clavier : fleches, ENTREE, ECHAP, q, UTF-8
@@ -62,7 +63,7 @@ projet-red_LOREM-IPSUM/
 │   │   └── typewriter.go         # effet machine a ecrire, compatible texte colore
 │   ├── menu/
 │   │   ├── menu.go               # Run : demo erreur + boite dialogue + texte qui s'ecrit
-│   │   ├── intro.go              # ShowIntro : cinematique + boite PLAY par-dessus
+│   │   ├── intro.go              # ShowStory : soul.cine en boucle + histoire + inputbox pseudo (rend X)
 │   │   ├── errordemo.go          # showTestError : msgbox NewError X secondes (demo)
 │   │   ├── character.go          # sous-menu personnage (stub)
 │   │   ├── inventory.go          # sous-menu inventaire (stub)
