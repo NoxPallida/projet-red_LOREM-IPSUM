@@ -6,7 +6,6 @@ package menu
 import (
 	"fmt"
 	"io"
-	"math/rand"
 	"os"
 	"strconv"
 	"time"
@@ -132,12 +131,13 @@ func ShowStory(in io.Reader, out io.Writer, path string) (*character.Character, 
 		name = "Traveler"
 	}
 
-	// 3. Tirage random : race, classe, mana. Simple, pas de menus.
-	chosenClass := spell.AllClasses[rand.Intn(len(spell.AllClasses))]
+	// 3. Le joueur choisit sa race, la classe en decoule.
+	// Plus de random : 1re sous-classe de la race (ou Any si aucune).
+	chosenClass := chooseRace(c, out, keys, m, &frame)
 	subs := spell.SubclassesForClass(chosenClass)
 	chosenSubclass := spell.SubclassAny
 	if len(subs) > 0 {
-		chosenSubclass = subs[rand.Intn(len(subs))]
+		chosenSubclass = subs[0]
 	}
 	chosenMana := character.Mana(chosenClass).Mana()
 	if chosenMana == 0 {
@@ -188,6 +188,57 @@ func ShowStory(in io.Reader, out io.Writer, path string) (*character.Character, 
 		}
 	}
 	return ch, nil
+}
+
+// chooseRace affiche le menu de choix de race (Humain, Elfe, Nain).
+// ↑/↓ pour naviguer, ENTREE/ESPACE pour valider. EOF = 1re race.
+// La classe n'est plus choisie ni tiree : elle decoule de la race.
+func chooseRace(c *tui.Canvas, out io.Writer, keys <-chan tui.Event, m cine.Movie, frame *int) character.Class {
+	races := spell.AllClasses
+	cursor := 0
+	bw, bh := 36, len(races)+5
+	bx, by := tui.CenteredBox(c.W, c.H, bw, bh)
+
+	for {
+		c.Clear()
+		if len(m.Frames) > 0 {
+			cine.DrawFrame(c, m, (*frame)%len(m.Frames))
+			(*frame)++
+		}
+		tui.FillStyled(c, bx, by, bw, bh, ' ', "", tui.BGBlack)
+		tui.DrawBoxWithTitle(c, bx, by, bw, bh, "CHOOSE YOUR RACE")
+		c.WriteStyled(bx+3, by+2, "Choose your race:", tui.FGBrightWhite, tui.BGBlack)
+		for i, r := range races {
+			prefix := "  [ ] "
+			fg := tui.FGWhite
+			if i == cursor {
+				prefix = "> [X] "
+				fg = tui.FGLightGreen
+			}
+			c.WriteStyled(bx+4, by+4+i, prefix+r.String(), fg, tui.BGBlack)
+		}
+		_ = tui.FlushStyled(out, c)
+
+		select {
+		case ev, ok := <-keys:
+			if !ok {
+				return races[0]
+			}
+			switch ev.K {
+			case tui.KeyUp:
+				cursor = (cursor - 1 + len(races)) % len(races)
+			case tui.KeyDown:
+				cursor = (cursor + 1) % len(races)
+			case tui.KeyEnter:
+				return races[cursor]
+			case tui.KeyRune:
+				if ev.R == ' ' {
+					return races[cursor]
+				}
+			}
+		case <-time.After(50 * time.Millisecond):
+		}
+	}
 }
 
 // drawPlayBox dessine la boite PLAY centree, par-dessus la frame.

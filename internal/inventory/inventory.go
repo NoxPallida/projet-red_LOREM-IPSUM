@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	BaseCapacity = 10
+	BaseCapacity = 100
 	UpgradeBonus = 10
 	MaxUpgrades  = 3
 )
