@@ -12,8 +12,17 @@ import (
 
 // CanFitItem vérifie SANS ajouter : soit un slot existant a de la place
 // pour cet item, soit un nouveau slot est disponible. Nécessaire pour
+func (c *Character) ensureInventory() {
+	if c.Inventory.Capacity == 0 {
+		c.Inventory = inventory.NewInventory()
+	}
+}
+
+// CanFitItem vérifie SANS ajouter : soit un slot existant a de la place
+// pour cet item, soit un nouveau slot est disponible. Nécessaire pour
 // respecter l'ordre strict de shop.Buy/forge.Craft (vérifier avant d'agir).
 func (c *Character) CanFitItem(i item.Item) bool {
+	c.ensureInventory()
 	maxStack := i.MaxStack()
 	for _, slot := range c.Inventory.Slots {
 		if slot.Item.Name() == i.Name() && slot.Quantity < maxStack {
@@ -27,6 +36,7 @@ func (c *Character) CanFitItem(i item.Item) bool {
 // shop.Buy et forge.Craft appellent TOUJOURS CanFitItem juste avant,
 // donc un échec ici ne devrait jamais arriver en pratique.
 func (c *Character) AddItem(i item.Item) {
+	c.ensureInventory()
 	_ = c.Inventory.AddItem(i, 1)
 }
 

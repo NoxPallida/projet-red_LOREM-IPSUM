@@ -30,7 +30,11 @@ func PlayWith(out io.Writer, in io.Reader, m Movie, overlay func(c *tui.Canvas))
 	if m.FPS <= 0 {
 		return fmt.Errorf("cine: fps invalide %d", m.FPS)
 	}
-	c := tui.NewCanvas(m.W, m.H)
+	w, h, err := tui.Size()
+	if err != nil || w <= 0 || h <= 0 {
+		w, h = m.W, m.H
+	}
+	c := tui.NewCanvas(w, h)
 	if err := tui.EnterAltScreen(out); err != nil {
 		return err
 	}
@@ -74,16 +78,22 @@ func PlayWith(out io.Writer, in io.Reader, m Movie, overlay func(c *tui.Canvas))
 	return nil
 }
 
-// DrawFrame pose la frame i du film sur le canvas (le fond seul).
+// DrawFrame pose la frame i du film sur le canvas (le fond seul),
+// centree horizontalement et verticalement par rapport a la taille du canvas.
 // L'appelant Clear avant, et dessine son overlay apres.
 func DrawFrame(c *tui.Canvas, m Movie, i int) {
 	if c == nil || i < 0 || i >= len(m.Frames) || i >= len(m.ColorFrames) {
 		return
 	}
+	offsetX := (c.W - m.W) / 2
+	offsetY := (c.H - m.H) / 2
+
 	clines := strings.Split(m.ColorFrames[i], "\n")
 	for y, line := range strings.Split(m.Frames[i], "\n") {
+		targetY := y + offsetY
 		x := 0
 		for _, r := range line {
+			targetX := x + offsetX
 			fg := ""
 			if y < len(clines) {
 				cr := []rune(clines[y])
@@ -91,7 +101,7 @@ func DrawFrame(c *tui.Canvas, m Movie, i int) {
 					fg = tui.FGByIndex(hexVal(cr[x]))
 				}
 			}
-			c.SetStyled(x, y, r, fg, "")
+			c.SetStyled(targetX, targetY, r, fg, "")
 			x++
 		}
 	}

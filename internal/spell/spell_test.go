@@ -10,9 +10,9 @@ func TestAllClassesAndSubclasses(t *testing.T) {
 	}
 
 	expectedRaces := map[Class]string{
-		Human: "Humain",
-		Elf:   "Elfe",
-		Dwarf: "Nain",
+		Human: "Human",
+		Elf:   "Elf",
+		Dwarf: "Dwarf",
 	}
 
 	for _, c := range AllClasses {
@@ -29,7 +29,7 @@ func TestAllClassesAndSubclasses(t *testing.T) {
 			t.Fatalf("expected at least 2 subclasses for race %v, got %d", c, len(subs))
 		}
 		for _, s := range subs {
-			if s.String() == "" || s.String() == "Aventurier" {
+			if s.String() == "" || s.String() == "Adventurer" {
 				t.Fatalf("subclass %v has invalid string %q", s, s.String())
 			}
 		}

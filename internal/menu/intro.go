@@ -32,11 +32,11 @@ func ShowIntro(out io.Writer, in io.Reader, path string) error {
 	return cine.PlayWith(out, in, m, drawPlayBox)
 }
 
-// storyTexts : l'histoire du debut, racontee pendant que soul.cine tourne.
+// storyTexts : the beginning story told while soul.cine plays.
 var storyTexts = []string{
-	"... . . .. Hey ... Reveille-toi !! ",
-	"Ecoute-moi bien, voyageur. Le village de LOREM est en danger.",
-	"Les ombres avancent, et il nous faut un heros. Alors... quel est ton nom ?",
+	"... . . .. Hey ... Wake up!! ",
+	"Listen closely, traveler. The village of LOREM is in danger.",
+	"Shadows are approaching, and we need a hero. So... what is your name?",
 }
 
 // ShowStory joue path EN BOUCLE avec l'histoire par-dessus, puis demande
@@ -88,7 +88,7 @@ func ShowStory(in io.Reader, out io.Writer, path string) (*character.Character, 
 	frame := 0
 	for _, s := range storyTexts {
 		plain, colors := tui.ParseMarkup(s)
-		box := tui.LayoutBottomBox(c, "HISTOIRE", plain)
+		box := tui.LayoutBottomBox(c, "STORY", plain)
 		tw := tui.NewTypewriter(plain)
 		step := 0
 		finished := false
@@ -96,14 +96,14 @@ func ShowStory(in io.Reader, out io.Writer, path string) (*character.Character, 
 			c.Clear()
 			cine.DrawFrame(c, m, frame%len(m.Frames))
 			frame++
-			tui.DrawTextBox(c, box, colors, tui.VisibleLen(tw), "[ESPACE] suite")
+			tui.DrawTextBox(c, box, colors, tui.VisibleLen(tw), "[SPACE] Next")
 			if err := tui.FlushStyled(out, c); err != nil {
-				return character.InitCharacter("Voyageur", character.Human), nil
+				return character.InitCharacter("Traveler", character.Human), nil
 			}
 			select {
 			case ev, ok := <-keys:
 				if !ok || tui.IsQuit(ev) {
-					return character.InitCharacter("Voyageur", character.Human), nil
+					return character.InitCharacter("Traveler", character.Human), nil
 				}
 				if tui.IsConfirm(ev) {
 					if !tui.IsDone(tw) {
@@ -126,9 +126,9 @@ func ShowStory(in io.Reader, out io.Writer, path string) (*character.Character, 
 		cine.DrawFrame(c, m, frame%len(m.Frames))
 		frame++
 	}
-	name, ok := tui.AskKeys(c, out, keys, "QUI ES-TU ?", "Quel est ton nom, voyageur ?", 12, behind)
+	name, ok := tui.AskKeys(c, out, keys, "WHO ARE YOU?", "What is your name, traveler?", 12, behind)
 	if !ok || name == "" {
-		name = "Voyageur"
+		name = "Traveler"
 	}
 
 	// 3. Choix de la race et de la classe
@@ -137,12 +137,12 @@ func ShowStory(in io.Reader, out io.Writer, path string) (*character.Character, 
 
 	// 4. Dialogue d'attribution du mana
 	destinyTexts := []string{
-		"Bienvenue, " + name + " le " + chosenSubclass.String() + " (" + chosenClass.String() + ").",
-		"Voyons a present la reserve de mana que le destin t'accorde...",
+		"Welcome, " + name + " the " + chosenSubclass.String() + " (" + chosenClass.String() + ").",
+		"Now, let us see the mana pool that destiny grants you...",
 	}
 	for _, s := range destinyTexts {
 		plain, colors := tui.ParseMarkup(s)
-		box := tui.LayoutBottomBox(c, "DESTIN", plain)
+		box := tui.LayoutBottomBox(c, "DESTINY", plain)
 		tw := tui.NewTypewriter(plain)
 		step := 0
 		finished := false
@@ -150,7 +150,7 @@ func ShowStory(in io.Reader, out io.Writer, path string) (*character.Character, 
 			c.Clear()
 			cine.DrawFrame(c, m, frame%len(m.Frames))
 			frame++
-			tui.DrawTextBox(c, box, colors, tui.VisibleLen(tw), "[ESPACE] suite")
+			tui.DrawTextBox(c, box, colors, tui.VisibleLen(tw), "[SPACE] Next")
 			if err := tui.FlushStyled(out, c); err != nil {
 				break
 			}
@@ -194,8 +194,8 @@ func chooseRace(c *tui.Canvas, out io.Writer, keys <-chan tui.Event, m cine.Movi
 			(*frame)++
 		}
 		tui.FillStyled(c, bx, by, bw, bh, ' ', "", tui.BGBlack)
-		tui.DrawBoxWithTitle(c, bx, by, bw, bh, "CHOIX DE LA RACE")
-		c.WriteStyled(bx+3, by+2, "Choisissez votre race :", tui.FGBrightWhite, tui.BGBlack)
+		tui.DrawBoxWithTitle(c, bx, by, bw, bh, "CHOOSE YOUR RACE")
+		c.WriteStyled(bx+3, by+2, "Choose your race:", tui.FGBrightWhite, tui.BGBlack)
 		for i, r := range races {
 			prefix := "  [ ] "
 			fg := tui.FGWhite
@@ -247,8 +247,8 @@ func chooseSubclass(c *tui.Canvas, out io.Writer, keys <-chan tui.Event, m cine.
 			(*frame)++
 		}
 		tui.FillStyled(c, bx, by, bw, bh, ' ', "", tui.BGBlack)
-		tui.DrawBoxWithTitle(c, bx, by, bw, bh, "CHOIX DE LA CLASSE")
-		c.WriteStyled(bx+3, by+2, "Choisissez votre classe :", tui.FGBrightWhite, tui.BGBlack)
+		tui.DrawBoxWithTitle(c, bx, by, bw, bh, "CHOOSE YOUR CLASS")
+		c.WriteStyled(bx+3, by+2, "Choose your class:", tui.FGBrightWhite, tui.BGBlack)
 		for i, s := range subs {
 			prefix := "  [ ] "
 			fg := tui.FGWhite
@@ -318,9 +318,9 @@ func runSlotMachine(c *tui.Canvas, out io.Writer, keys <-chan tui.Event, m cine.
 			(*frame)++
 		}
 		tui.FillStyled(c, bx, by, bw, bh, ' ', "", tui.BGBlack)
-		tui.DrawBoxWithTitle(c, bx, by, bw, bh, "MACHINE DU DESTIN")
+		tui.DrawBoxWithTitle(c, bx, by, bw, bh, "WHEEL OF DESTINY")
 
-		titleText := "Tirage du Mana : " + name
+		titleText := "Mana Roll: " + name
 		c.WriteStyled(bx+(bw-len(titleText))/2, by+2, titleText, tui.FGBrightWhite, tui.BGBlack)
 
 		// Roulette MANA centree
@@ -336,10 +336,10 @@ func runSlotMachine(c *tui.Canvas, out io.Writer, keys <-chan tui.Event, m cine.
 
 		// Statut / indice en bas (retire le 'Destin : ...' moche)
 		if !manaDone {
-			msg := "Roulette du mana en cours..."
+			msg := "Rolling for mana..."
 			c.WriteStyled(bx+(bw-len(msg))/2, by+9, msg, tui.FGYellow, tui.BGBlack)
 		} else {
-			hint := "[ESPACE] Commencer l'aventure"
+			hint := "[SPACE] Begin Adventure"
 			c.WriteStyled(bx+(bw-len(hint))/2, by+9, hint, tui.FGBrightWhite, tui.BGBlack)
 		}
 	}
@@ -371,7 +371,7 @@ func runSlotMachine(c *tui.Canvas, out io.Writer, keys <-chan tui.Event, m cine.
 		case ev, ok := <-keys:
 			if !ok || tui.IsQuit(ev) || tui.IsConfirm(ev) {
 				ch := character.InitCharacter(name, chosenClass)
-				ch.Subclass = chosenSubclass
+				ch.SetSubclass(chosenSubclass)
 				ch.Mana = chosenMana
 				ch.ManaMax = chosenMana
 				return ch

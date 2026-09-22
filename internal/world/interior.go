@@ -32,13 +32,13 @@ const (
 func npcByKind(kind ZoneKind) NPC {
 	switch kind {
 	case ZoneShop:
-		return NPC{Name: "Marchand", X: interiorW / 2, Y: 5, Glyph: 'M', FG: tui.FGLightGreen}
+		return NPC{Name: "Merchant", X: interiorW / 2, Y: 5, Glyph: 'M', FG: tui.FGLightGreen}
 	case ZoneForge:
-		return NPC{Name: "Forgeron", X: interiorW / 2, Y: 5, Glyph: 'F', FG: tui.FGLightRed}
+		return NPC{Name: "Blacksmith", X: interiorW / 2, Y: 5, Glyph: 'B', FG: tui.FGLightRed}
 	case ZoneHome:
-		return NPC{Name: "Aieule", X: interiorW / 2, Y: 5, Glyph: 'A', FG: tui.FGLightMagenta}
+		return NPC{Name: "Elder", X: interiorW / 2, Y: 5, Glyph: 'E', FG: tui.FGLightMagenta}
 	default: // ZoneGuild et autres
-		return NPC{Name: "Maire de guilde", X: interiorW / 2, Y: 5, Glyph: 'G', FG: tui.FGLightCyan}
+		return NPC{Name: "Guild Master", X: interiorW / 2, Y: 5, Glyph: 'G', FG: tui.FGLightCyan}
 	}
 }
 
@@ -62,7 +62,7 @@ func BuildInterior(kind ZoneKind) Interior {
 	}
 	// Porte plein sud, au milieu du mur.
 	in.DoorX, in.DoorY = in.W/2, in.H-1
-	in.Cells[in.DoorY][in.DoorX] = Tile{Symbol: 'E', FG: tui.FGLightCyan, Walkable: true, Kind: TileDoor}
+	in.Cells[in.DoorY][in.DoorX] = Tile{Symbol: '█', FG: tui.FGLightCyan, Walkable: true, Kind: TileDoor}
 	// PNJ au centre, sur une case devenue infranchissable.
 	in.NPC = npcByKind(kind)
 	in.Cells[in.NPC.Y][in.NPC.X] = Tile{Symbol: in.NPC.Glyph, FG: in.NPC.FG, Walkable: false, Kind: TileVoid}

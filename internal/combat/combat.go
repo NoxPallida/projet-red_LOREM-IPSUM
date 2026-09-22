@@ -19,14 +19,25 @@ type AttackOption struct {
 }
 
 // AttackOptions liste tout ce que le joueur peut choisir sous "Attaque" :
-// l'attaque de base (Strength + arme équipée) toujours en premier,
+// l'attaque de base propre à sa classe/sous-classe (Strength + arme équipée) toujours en premier,
 // puis chaque sort appris. C'est cette liste que menu/combat.go affichera.
 func AttackOptions(c *character.Character) []AttackOption {
+	base := c.BaseAttack()
+	baseDmg := c.TotalAttack()
+	if uint16(base.Damage) > baseDmg {
+		baseDmg = uint16(base.Damage)
+	}
+
 	opts := []AttackOption{
-		{Name: "Attaque de base", Damage: c.TotalAttack(), ManaCost: 0},
+		{
+			Name:     base.Name,
+			Damage:   baseDmg,
+			ManaCost: uint16(base.ManaCost),
+			SpellID:  base.ID,
+		},
 	}
 	for id, known := range c.KnownSpells {
-		if !known {
+		if !known || id == base.ID {
 			continue
 		}
 		if s, ok := spell.GetSpell(id); ok {
@@ -72,6 +83,7 @@ type Combat struct {
 	Over         bool
 	PlayerWon    bool
 	PlayerFled   bool
+	DroppedItems []item.Item
 }
 
 // NewCombat démarre un combat. Le joueur commence TOUJOURS à mana
@@ -110,12 +122,13 @@ func (cb *Combat) PlayerAttack(spellID string) ActionResult {
 	cb.Player.Mana -= opt.ManaCost
 
 	cb.Enemy.TakeDamage(opt.Damage)
-	cb.log("Vous utilisez %s : %d dégâts.", opt.Name, opt.Damage)
+	cb.log("You use %s: %d damage.", opt.Name, opt.Damage)
 
 	// L'attaque de base porte les effets de l'arme équipée (ex: bleed
 	// d'une hache). Un sort n'a pas d'arme à consulter : ses éventuels
 	// effets viendraient de spell.Spell lui-même, pas encore modélisés.
-	if spellID == "" && cb.Player.EquippedWeapon != nil {
+	isBase := (spellID == "" || spellID == cb.Player.BaseAttack().ID)
+	if isBase && cb.Player.EquippedWeapon != nil {
 		cb.applyItemEffects(*cb.Player.EquippedWeapon)
 	}
 
@@ -138,7 +151,7 @@ func (cb *Combat) UseItem(consumable item.Item) ActionResult {
 	}
 
 	cb.applyItemEffects(consumable)
-	cb.log("Vous utilisez %s.", consumable.Name())
+	cb.log("You use %s.", consumable.Name())
 
 	cb.endPlayerTurn()
 	return ActionOK
@@ -167,7 +180,7 @@ func (cb *Combat) applyItemEffects(i item.Item) {
 		if idx, found := cb.findEnemyEffect(eff.Type); found {
 			cb.EnemyEffects[idx].Amount = uint16(eff.Amount)
 			cb.EnemyEffects[idx].Remaining = eff.Duration
-			cb.log("%s : %s est rafraîchi.", cb.Enemy.Template.Name, eff.Type.String())
+			cb.log("%s: %s is refreshed.", cb.Enemy.Template.Name, eff.Type.String())
 			continue
 		}
 
@@ -176,7 +189,7 @@ func (cb *Combat) applyItemEffects(i item.Item) {
 			Amount:    uint16(eff.Amount),
 			Remaining: eff.Duration,
 		})
-		cb.log("%s est affligé de %s.", cb.Enemy.Template.Name, eff.Type.String())
+		cb.log("%s is afflicted with %s.", cb.Enemy.Template.Name, eff.Type.String())
 	}
 }
 
@@ -201,7 +214,7 @@ func (cb *Combat) Flee() ActionResult {
 	}
 	cb.Over = true
 	cb.PlayerFled = true
-	cb.log("Vous prenez la fuite.")
+	cb.log("You fled the battle.")
 	return ActionOK
 }
 
@@ -222,8 +235,8 @@ func (cb *Combat) endPlayerTurn() {
 	cb.regenMana()
 }
 
-// tickEnemyEffects applique un tour de dégâts pour chaque statut actif
-// sur l'ennemi, puis décrémente sa durée restante. Un effet à 0 tour
+// tickEnemyEffects applique le tick de chaque statut en cours sur l'ennemi :
+// les dégâts sont infligés, la durée restante diminue d'un tour, l'effet sans tour
 // restant est retiré. Le poison/bleed peut donc achever l'ennemi ici,
 // avant même que le joueur n'attaque à nouveau.
 func (cb *Combat) tickEnemyEffects() {
@@ -234,7 +247,7 @@ func (cb *Combat) tickEnemyEffects() {
 	for _, ae := range cb.EnemyEffects {
 		cb.Enemy.TakeDamage(ae.Amount)
 		ae.Remaining--
-		cb.log("%s subit %d dégâts de %s (%d tour(s) restant(s)).", cb.Enemy.Template.Name, ae.Amount, ae.Type.String(), ae.Remaining)
+		cb.log("%s takes %d %s damage (%d turn(s) remaining).", cb.Enemy.Template.Name, ae.Amount, ae.Type.String(), ae.Remaining)
 		if ae.Remaining > 0 {
 			remaining = append(remaining, ae)
 		}
@@ -249,7 +262,11 @@ func (cb *Combat) checkEnemyDefeated() bool {
 	if !cb.Enemy.IsAlive() {
 		cb.Over = true
 		cb.PlayerWon = true
-		cb.log("%s est vaincu !", cb.Enemy.Template.Name)
+		cb.log("%s is defeated!", cb.Enemy.Template.Name)
+		cb.DroppedItems = cb.Enemy.RollDrops()
+		for _, it := range cb.DroppedItems {
+			cb.log("Loot: you found %s!", it.Name())
+		}
 		return true
 	}
 	return false
@@ -264,12 +281,12 @@ func (cb *Combat) enemyTurn() {
 	} else {
 		cb.Player.Hp -= atk.Damage
 	}
-	cb.log("%s utilise %s : %d dégâts.", cb.Enemy.Template.Name, atk.Name, atk.Damage)
+	cb.log("%s uses %s: %d damage.", cb.Enemy.Template.Name, atk.Name, atk.Damage)
 
 	if cb.Player.Hp == 0 {
 		cb.Over = true
 		cb.PlayerWon = false
-		cb.log("Vous êtes vaincu...")
+		cb.log("You were defeated...")
 	}
 }
 
@@ -291,7 +308,14 @@ func (cb *Combat) regenMana() {
 }
 
 func findOption(c *character.Character, spellID string) (AttackOption, bool) {
-	for _, opt := range AttackOptions(c) {
+	opts := AttackOptions(c)
+	if len(opts) == 0 {
+		return AttackOption{}, false
+	}
+	if spellID == "" {
+		return opts[0], true
+	}
+	for _, opt := range opts {
 		if opt.SpellID == spellID {
 			return opt, true
 		}

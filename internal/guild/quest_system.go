@@ -129,18 +129,18 @@ func QuestsAvailable(rank Rank) []Quest {
 // récompenses. À équilibrer plus finement une fois les monstres définis.
 
 var (
-	QuestRatsF          = NewQuest("rats_f", RankF, "Infestation de rats", "rat", 5, 20, 10)
-	QuestWolvesF        = NewQuest("wolves_f", RankF, "Loups aux abords de la ville", "wolf", 3, 30, 15)
-	QuestGoblinsF       = NewQuest("goblins_f", RankF, "Entraînement aux gobelins", "goblin", 3, 25, 12)
-	QuestRatsCaveF      = NewQuest("rats_cave_f", RankF, "Nettoyage des caves", "rat", 8, 35, 18)
-	QuestGoblinMasteryF = NewQuest("goblin_mastery_f", RankF, "Épreuve du terrain de sable", "goblin", 6, 45, 25)
+	QuestRatsF          = NewQuest("rats_f", RankF, "Rat Infestation", "rat", 5, 20, 10)
+	QuestWolvesF        = NewQuest("wolves_f", RankF, "Wolves Outside Town", "wolf", 3, 30, 15)
+	QuestGoblinsF       = NewQuest("goblins_f", RankF, "Goblin Training", "goblin", 3, 25, 12)
+	QuestRatsCaveF      = NewQuest("rats_cave_f", RankF, "Cellar Cleanout", "rat", 8, 35, 18)
+	QuestGoblinMasteryF = NewQuest("goblin_mastery_f", RankF, "Sand Arena Trial", "goblin", 6, 45, 25)
 
-	QuestBoarsE     = NewQuest("boars_e", RankE, "Sangliers ravageurs", "boar", 6, 60, 30)
-	QuestWolvesE    = NewQuest("wolves_e", RankE, "Meute de loups", "wolf", 8, 70, 35)
-	QuestBoarHuntE  = NewQuest("boar_hunt_e", RankE, "Chasse aux grands sangliers", "boar", 10, 85, 45)
-	QuestWolfAlphaE = NewQuest("wolf_alpha_e", RankE, "Traque du loup dominant", "wolf", 12, 100, 50)
+	QuestBoarsE     = NewQuest("boars_e", RankE, "Pest Boars", "boar", 6, 60, 30)
+	QuestWolvesE    = NewQuest("wolves_e", RankE, "Wolf Pack", "wolf", 8, 70, 35)
+	QuestBoarHuntE  = NewQuest("boar_hunt_e", RankE, "Great Boar Hunt", "boar", 10, 85, 45)
+	QuestWolfAlphaE = NewQuest("wolf_alpha_e", RankE, "Alpha Wolf Hunt", "wolf", 12, 100, 50)
 
-	QuestTrollsD = NewQuest("trolls_d", RankD, "Chasse au troll", "troll", 3, 150, 80)
+	QuestTrollsD = NewQuest("trolls_d", RankD, "Troll Hunt", "troll", 3, 150, 80)
 )
 
 // GuildStatus suit la progression d'UN joueur dans la guilde :

@@ -119,10 +119,10 @@ func (c *Character) ClaimFreePotion()           { c.FreePotionClaimed = true }
 
 func FormatName(name string) string {
 	if len(name) == 0 {
-		return "Michel Ier"
+		return "Traveler"
 	}
 	if len(name) > 15 {
-		return "Michel IIe"
+		return "Traveler"
 	}
 	full_letters := ""
 	for _, letter := range name {
@@ -141,7 +141,7 @@ func FormatName(name string) string {
 		}
 	}
 	if len(fin_name) == 0 {
-		return "Michel Ier"
+		return "Traveler"
 	}
 	return fin_name
 }
@@ -160,7 +160,7 @@ func InitCharacter(name string, class Class) *Character {
 
 	manaRoll := Mana(class).Mana()
 
-	return &Character{
+	ch := &Character{
 		Name:              FormattedName,
 		Class:             class,
 		level:             1,
@@ -174,7 +174,10 @@ func InitCharacter(name string, class Class) *Character {
 		Strength:          Strength(class).Strength(),
 		FreePotionClaimed: false,
 		money:             100,
+		Inventory:         inventory.NewInventory(),
 	}
+	ch.LearnAvailableSpells()
+	return ch
 }
 
 func TotalXpForLevel(level uint8) int {
@@ -203,6 +206,7 @@ func (c *Character) AddXP(amount uint16) bool {
 			c.Strength += 1 // +1 Atk (Force) par niveau
 			c.ManaMax += 3  // +3 Mana Max par niveau
 			c.Mana += 3
+			c.LearnAvailableSpells()
 		} else {
 			break
 		}
@@ -255,4 +259,32 @@ func (c *Character) LearnSpell(spellID string) bool {
 	}
 	c.KnownSpells[spellID] = true
 	return true
+}
+
+// BaseAttack renvoie le sort/l'attaque de base propre à la classe et sous-classe du personnage.
+func (c *Character) BaseAttack() spell.Spell {
+	return spell.BaseAttackFor(c.Class, c.Subclass)
+}
+
+// LearnAvailableSpells apprend automatiquement les sorts débloqués selon la classe, sous-classe et niveau.
+func (c *Character) LearnAvailableSpells() {
+	if c.KnownSpells == nil {
+		c.KnownSpells = make(map[string]bool)
+	}
+	for _, s := range spell.AvailableSpells(c.Class, c.Subclass, c.level) {
+		c.KnownSpells[s.ID] = true
+	}
+}
+
+// SetSubclass configure la sous-classe du personnage et met à jour ses sorts.
+func (c *Character) SetSubclass(sub Subclass) {
+	c.Subclass = sub
+	newKnown := make(map[string]bool)
+	for id, known := range c.KnownSpells {
+		if s, ok := spell.GetSpell(id); ok && s.Method == spell.ObtainByBook && known {
+			newKnown[id] = true
+		}
+	}
+	c.KnownSpells = newKnown
+	c.LearnAvailableSpells()
 }
