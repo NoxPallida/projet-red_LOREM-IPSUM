@@ -41,9 +41,9 @@ func worldMapLayer(w *world.World, p *world.Player) tui.FuncLayer {
 	}
 }
 
-// hudLayer construit le HUD en Layer classique,
+// displayInfo construit le HUD en Layer classique,
 // centré en haut, composité PAR-DESSUS la carte (dedans, pas à côté).
-func hudLayer(c *tui.Canvas, ch *character.Character) tui.Layer {
+func displayInfo(c *tui.Canvas, ch *character.Character) tui.Layer {
 	x := (c.W - 32) / 2
 	if x < 0 {
 		x = 0
