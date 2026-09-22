@@ -1,11 +1,30 @@
 package world
 
+// TileKind classe une tile par nature (herbe, eau, forêt...), indépendamment
+// de son rendu (Symbol/FG). Sert à des règles de jeu qui ne doivent PAS
+// dépendre de l'apparence (ex: où les monstres peuvent spawn).
+// TileVoid = valeur zéro : une Tile{} non renseignée (chunk non chargé,
+// case hors carte) est toujours TileVoid, donc jamais spawnable par défaut.
+type TileKind int
+
+const (
+	TileVoid TileKind = iota
+	TileGrass
+	TileWater
+	TileForest
+	TileRock
+	TileSand
+	TileBuilding
+	TileDoor
+)
+
 // Tile porte aussi une couleur, pour que le rendu tui n'ait qu'à lire
 // cette donnée plutôt que de la déduire du Symbol par un switch.
 type Tile struct {
 	Symbol   rune
 	FG       string // un des codes tui.FG*
 	Walkable bool
+	Kind     TileKind
 }
 
 const ChunkSize = 16

@@ -23,15 +23,15 @@ const Block = '█'
 // Chaque tile est rendue comme un bloc plein de sa couleur.
 var TileLegend = map[rune]Tile{
 	// --- carte monde (map.txt) ---
-	'H': {Symbol: Block, FG: tui.FGGreen, Walkable: true},       // herbe -> vert
-	'O': {Symbol: Block, FG: tui.FGBlue, Walkable: false},       // eau -> bleu
-	'C': {Symbol: Block, FG: tui.FGLightGreen, Walkable: true},  // foret/champ -> vert clair
-	'X': {Symbol: Block, FG: tui.FGGray, Walkable: false},       // rocher/obstacle -> gris
-	'S': {Symbol: Block, FG: tui.FGLightYellow, Walkable: true}, // sable/marchand -> jaune clair
-	'B': {Symbol: Block, FG: tui.FGWhite, Walkable: false},      // batiment/mur -> blanc
-	'E': {Symbol: Block, FG: tui.FGLightCyan, Walkable: true},   // entree/porte spec -> cyan clair
-	'-': {Symbol: Block, FG: tui.FGYellow, Walkable: false},     // border -> jaune
-	'=': {Symbol: ' ', FG: "", Walkable: false},                 // bordure/vide -> vide
+	'H': {Symbol: Block, FG: tui.FGGreen, Walkable: true, Kind: TileGrass},       // herbe -> vert, spawnable
+	'O': {Symbol: Block, FG: tui.FGBlue, Walkable: false, Kind: TileWater},       // eau -> bleu
+	'C': {Symbol: Block, FG: tui.FGLightGreen, Walkable: true, Kind: TileForest}, // foret/champ -> vert clair, spawnable
+	'X': {Symbol: Block, FG: tui.FGGray, Walkable: false, Kind: TileRock},        // rocher/obstacle -> gris
+	'S': {Symbol: Block, FG: tui.FGLightYellow, Walkable: true, Kind: TileSand},  // sable/marchand -> jaune clair, spawnable
+	'B': {Symbol: Block, FG: tui.FGWhite, Walkable: false, Kind: TileBuilding},   // batiment/mur -> blanc
+	'E': {Symbol: Block, FG: tui.FGLightCyan, Walkable: true, Kind: TileDoor},    // entree/porte spec -> cyan clair
+	'-': {Symbol: Block, FG: tui.FGYellow, Walkable: false, Kind: TileVoid},      // border -> jaune
+	'=': {Symbol: ' ', FG: "", Walkable: false, Kind: TileVoid},                  // bordure/vide -> vide
 	// --- carte ville (town.txt, compat) ---
 	'.': {Symbol: Block, FG: tui.FGGreen, Walkable: true},        // herbe / sol
 	'#': {Symbol: Block, FG: tui.FGWhite, Walkable: false},       // mur

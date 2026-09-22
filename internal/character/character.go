@@ -4,6 +4,7 @@ import (
 	"math"
 	"math/rand"
 	"runa/internal/inventory"
+	"runa/internal/item"
 	"runa/internal/spell"
 )
 
@@ -69,11 +70,14 @@ type Character struct {
 	Hp                uint16
 	HpMax             uint16
 	Mana              uint16
+	ManaMax           uint16
 	Speed             uint8
 	Strength          uint8
 	FreePotionClaimed bool
 	money             uint16 // privé : accès via Money()/SpendMoney()/EarnMoney()
 	Inventory         inventory.Inventory
+	EquippedWeapon    *item.Weapon
+	KnownSpells       map[string]bool
 }
 
 // Level expose le niveau du personnage. Nécessaire pour satisfaire
@@ -149,6 +153,8 @@ func InitCharacter(name string, class Class) *Character {
 		HPMax = 120
 	}
 
+	manaRoll := Mana(class).Mana()
+
 	return &Character{
 		Name:              FormattedName,
 		Class:             class,
@@ -156,7 +162,9 @@ func InitCharacter(name string, class Class) *Character {
 		XP:                0,
 		Hp:                HPMax,
 		HpMax:             HPMax,
-		Mana:              Mana(class).Mana(),
+		Mana:              manaRoll,
+		ManaMax:           manaRoll, // le perso commence toujours à mana plein
+		KnownSpells:       make(map[string]bool),
 		Speed:             Speed(class).Speed(),
 		Strength:          Strength(class).Strength(),
 		FreePotionClaimed: false,
@@ -198,4 +206,34 @@ func (c *Character) AddXP(amount uint16) bool {
 // tranches de MaxUint16 pour ne jamais dépasser AddXP.
 func (c *Character) GainExp(amount uint16) {
 	c.AddXP(amount)
+}
+
+// TotalAttack combine la force du personnage et les dégâts de son arme
+// équipée (0 si aucune arme). C'est cette valeur que combat.go utilise
+// pour l'attaque de base.
+func (c *Character) TotalAttack() uint16 {
+	total := uint16(c.Strength)
+	if c.EquippedWeapon != nil {
+		total += uint16(c.EquippedWeapon.Damage)
+	}
+	return total
+}
+
+// EquipWeapon change l'arme équipée du personnage.
+func (c *Character) EquipWeapon(w item.Weapon) {
+	c.EquippedWeapon = &w
+}
+
+// LearnSpell satisfait item.Learner (cf. item-effect.go, UseSpellBook) :
+// renvoie false si le sort est déjà connu, pour que le livre ne soit
+// jamais "gâché" sur un sort déjà appris.
+func (c *Character) LearnSpell(spellID string) bool {
+	if c.KnownSpells == nil {
+		c.KnownSpells = make(map[string]bool)
+	}
+	if c.KnownSpells[spellID] {
+		return false
+	}
+	c.KnownSpells[spellID] = true
+	return true
 }
