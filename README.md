@@ -1,5 +1,5 @@
 # projet-red_runa
-Projet Red Ynov 2026/2027
+Projet red_runa Ynov 2026/2027
 ASCII_ART = """
 
                                     ,--.
