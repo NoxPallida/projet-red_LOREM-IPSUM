@@ -37,7 +37,7 @@ type CatalogEntry struct {
 // InventoryUpgradePrice : prix de l'augmentation d'inventaire.
 // Le README le liste explicitement comme "à définir avec le groupe" —
 // ne pas l'inventer silencieusement, cette valeur est un placeholder.
-const InventoryUpgradePrice uint16 = 0
+const InventoryUpgradePrice uint16 = 30
 
 type PurchaseResult int
 
