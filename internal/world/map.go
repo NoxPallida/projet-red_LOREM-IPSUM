@@ -30,6 +30,7 @@ var TileLegend = map[rune]Tile{
 	'S': {Symbol: Block, FG: tui.FGLightYellow, Walkable: true, Kind: TileSand},  // sable/marchand -> jaune clair, spawnable
 	'B': {Symbol: Block, FG: tui.FGWhite, Walkable: false, Kind: TileBuilding},   // batiment/mur -> blanc
 	'E': {Symbol: Block, FG: tui.FGLightCyan, Walkable: true, Kind: TileDoor},    // entree/porte spec -> cyan clair
+	'N': {Symbol: Block, FG: tui.FGLightYellow, Walkable: false, Kind: TileEnd},  // porte de fin -> doree, verrouillee jusqu'au rang S
 	'-': {Symbol: Block, FG: tui.FGYellow, Walkable: false, Kind: TileVoid},      // border -> jaune
 	'=': {Symbol: ' ', FG: "", Walkable: false, Kind: TileVoid},                  // bordure/vide -> vide
 	// --- carte ville (town.txt, compat) ---

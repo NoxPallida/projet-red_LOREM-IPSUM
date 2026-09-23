@@ -56,6 +56,36 @@ func loadRadius() int {
 // Sans kitty (Windows conhost, vieux terminaux, pipes) : 1 touche =
 // 1 pas, exactement comme avant. Quitter : ECHAP (ou entrée fermée).
 // Le nettoyage (kitty + écran) est fait à la main avant chaque sortie.
+// withCookedKeys désactive kitty le temps de fn (les sous-menus lisent
+// au clavier en ReadKey bloquant, incompatible kitty), puis réactive.
+// Sans kitty : appelle fn directement.
+func withCookedKeys(out *os.File, kitty bool, fn func()) {
+	if kitty {
+		tui.PopKitty(out)
+	}
+	fn()
+	if kitty {
+		tui.PushKitty(out)
+	}
+}
+
+// endDoorNear rend true si une porte de fin 'N' touche le joueur
+// (les 8 cases autour). La porte elle-meme est infranchissable :
+// on l'ouvre depuis l'exterieur avec ESPACE.
+func endDoorNear(w *world.World, p *world.Player) bool {
+	for dy := -1; dy <= 1; dy++ {
+		for dx := -1; dx <= 1; dx++ {
+			if dx == 0 && dy == 0 {
+				continue
+			}
+			if t, ok := w.TileAt(p.X+dx, p.Y+dy); ok && t.Kind == world.TileEnd {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func RunGame(ch *character.Character, w *world.World, p *world.Player, sp *spawner.Spawner, gs *guild.GuildStatus, spawnX, spawnY int) error {
 	in := os.Stdin
 	out := os.Stdout
@@ -134,19 +164,15 @@ func RunGame(ch *character.Character, w *world.World, p *world.Player, sp *spawn
 				// Butin : on le dit au joueur au lieu de l'ajouter en
 				// silence (le log du combat est efface par render()).
 				if len(cb.DroppedItems) > 0 {
-					if kitty {
-						tui.PopKitty(out)
-					}
-					names := make([]string, 0, len(cb.DroppedItems))
-					for _, it := range cb.DroppedItems {
-						names = append(names, it.Name())
-					}
-					tui.Dialogue(c, out, in,
-						"Victoire ! +"+strconv.Itoa(int(enemy.XPDrop))+" XP.",
-						"Butin : "+strings.Join(names, ", ")+".")
-					if kitty {
-						tui.PushKitty(out)
-					}
+					withCookedKeys(out, kitty, func() {
+						names := make([]string, 0, len(cb.DroppedItems))
+						for _, it := range cb.DroppedItems {
+							names = append(names, it.Name())
+						}
+						tui.Dialogue(c, out, in,
+							"Victoire ! +"+strconv.Itoa(int(enemy.XPDrop))+" XP.",
+							"Butin : "+strings.Join(names, ", ")+".")
+					})
 				}
 			}
 			// defaite : ecran de mort puis respawn au spawn avec 50 % des PV.
@@ -230,53 +256,61 @@ func RunGame(ch *character.Character, w *world.World, p *world.Player, sp *spawn
 			}
 			// Touche 'e' ou 'E' : ouvrir l'inventaire
 			if ev.K == tui.KeyRune && (ev.R == 'e' || ev.R == 'E') && !rel {
-				if kitty {
-					tui.PopKitty(out)
-				}
-				RunInventoryMenu(in, out, c, ch, render)
-				if kitty {
-					tui.PushKitty(out)
-				}
+				withCookedKeys(out, kitty, func() {
+					RunInventoryMenu(in, out, c, ch, render)
+				})
 				render()
 				pressed = true
 				continue
 			}
 			key, dx, dy, ok := normDir(ev)
 			if !ok {
-				// Espace ou Entrée : coffre si adjacent, sinon PNJ si adjacent.
+				// Espace ou Entrée : coffre si adjacent, sinon PNJ si adjacent,
+				// sinon porte de fin 'N' si adjacente (dehors uniquement).
 				if (ev.K == tui.KeyEnter || (ev.K == tui.KeyRune && ev.R == ' ')) && !rel {
 					if inIn != nil && inIn.isNearChest() {
-						if kitty {
-							tui.PopKitty(out)
-						}
-						RunChestMenu(in, out, c, ch, &ch.Chest, render)
-						if kitty {
-							tui.PushKitty(out)
-						}
+						withCookedKeys(out, kitty, func() {
+							RunChestMenu(in, out, c, ch, &ch.Chest, render)
+						})
 						render()
 						pressed = true
 					} else if inIn != nil && inIn.isNearNPC() {
-						if kitty {
-							tui.PopKitty(out)
-						}
-						// Le PNJ lache sa vanne d'abord. S'il est parti
-						// (q/ECHAP), on n'ouvre pas son menu derriere.
-						openMenu := true
-						if line, ok := npcBanter(inIn.In.Kind); ok {
-							openMenu = !tui.Dialogue(c, out, in, inIn.In.NPC.Name+" : "+line)
-						}
-						if openMenu {
-							switch inIn.In.Kind {
-							case world.ZoneShop:
-								RunShopMenu(in, out, c, ch, render)
-							case world.ZoneForge:
-								RunForgeMenu(in, out, c, ch, render)
-							case world.ZoneGuild:
-								RunGuildMenu(in, out, c, ch, gs, render)
+						withCookedKeys(out, kitty, func() {
+							// Le PNJ lache sa vanne d'abord. S'il est parti
+							// (q/ECHAP), on n'ouvre pas son menu derriere.
+							openMenu := true
+							if line, ok := npcBanter(inIn.In.Kind); ok {
+								openMenu = !tui.Dialogue(c, out, in, inIn.In.NPC.Name+" : "+line)
 							}
-						}
-						if kitty {
-							tui.PushKitty(out)
+							if openMenu {
+								switch inIn.In.Kind {
+								case world.ZoneShop:
+									RunShopMenu(in, out, c, ch, render)
+								case world.ZoneForge:
+									RunForgeMenu(in, out, c, ch, render)
+								case world.ZoneGuild:
+									RunGuildMenu(in, out, c, ch, gs, render)
+								}
+							}
+						})
+						render()
+						pressed = true
+					} else if inIn == nil && endDoorNear(w, p) {
+						// Porte de fin 'N' : verrouillee jusqu'au rang S.
+						ended := false
+						withCookedKeys(out, kitty, func() {
+							if gs.Rank >= guild.RankS {
+								tui.Dialogue(c, out, in,
+									"La porte N s'ouvre dans un flot de lumière...",
+									"FIN — Merci d'avoir joué, héros de rang S !")
+								ended = true
+							} else {
+								tui.Dialogue(c, out, in, "Porte scellée : seuls les héros de rang S peuvent passer.")
+							}
+						})
+						if ended {
+							leave()
+							return nil
 						}
 						render()
 						pressed = true

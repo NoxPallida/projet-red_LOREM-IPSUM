@@ -102,7 +102,7 @@ func RunGuildMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Charac
 		if err != nil {
 			return
 		}
-		if ev.K == tui.KeyEsc || (ev.K == tui.KeyRune && (ev.R == 'q' || ev.R == 'Q')) {
+		if tui.IsQuit(ev) {
 			return
 		}
 		switch ev.K {

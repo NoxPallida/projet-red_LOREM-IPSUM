@@ -113,7 +113,7 @@ func RunChestMenu(in, out *os.File, c *tui.Canvas, ch *character.Character, ches
 		if err != nil {
 			return
 		}
-		if ev.K == tui.KeyEsc || (ev.K == tui.KeyRune && (ev.R == 'q' || ev.R == 'Q' || ev.R == 'e' || ev.R == 'E')) {
+		if tui.IsQuit(ev) || (ev.K == tui.KeyRune && (ev.R == 'e' || ev.R == 'E')) {
 			return
 		}
 		switch ev.K {
