@@ -9,18 +9,24 @@ import (
 	"runa/internal/tui"
 )
 
+// equipLabels dans l'ordre d'affichage : les 4 armures puis l'arme.
+var equipLabels = [5]string{"Head", "Chest", "Legs", "Feet", "Weapon"}
+
 // RunInventoryMenu ouvre le menu inventaire du joueur par-dessus le rendu du jeu.
-// Permet de voir ses objets, leurs quantités, de consommer des potions ou
-// d'équiper des armes. Sortie avec 'e', 'E', ECHAP ou 'q'.
+// En haut : les objets (potions a consommer, equipements a enfiler).
+// En bas : les 5 slots d'equipement (casque, plastron, jambieres,
+// bottes, arme), selectionnables pour desequiper.
+// Sortie avec 'e', 'E', ECHAP ou 'q'.
 func RunInventoryMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Character, renderUnder func()) {
 	cursor := 0
 	msg := ""
 	msgCol := tui.FGLightGreen
 
-	bw, bh := 58, 16
+	bw, bh := 58, 22
 	bx, by := tui.CenteredBox(c.W, c.H, bw, bh)
 	scrollOffset := 0
 	maxVisible := 6
+	equipStart := 10 // premiere ligne des slots d'equipement (relative a by)
 
 	for {
 		renderUnder()
@@ -33,16 +39,17 @@ func RunInventoryMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Ch
 		c.WriteStyled(bx+bw-len(capStr)-3, by+1, capStr, tui.FGCyan, tui.BGBlack)
 
 		slots := ch.Inventory.Slots
+		total := len(slots) + len(equipLabels)
+		if cursor >= total {
+			cursor = total - 1
+		}
+		if cursor < 0 {
+			cursor = 0
+		}
+
 		if len(slots) == 0 {
 			c.WriteStyled(bx+4, by+4, "(Your inventory is empty)", tui.FGGray, tui.BGBlack)
 		} else {
-			if cursor >= len(slots) {
-				cursor = len(slots) - 1
-			}
-			if cursor < 0 {
-				cursor = 0
-			}
-
 			if cursor < scrollOffset {
 				scrollOffset = cursor
 			}
@@ -78,7 +85,30 @@ func RunInventoryMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Ch
 			if cursor >= 0 && cursor < len(slots) {
 				curItem := slots[cursor].Item
 				desc := itemDescription(curItem)
-				c.WriteStyled(bx+3, by+bh-4, desc, tui.FGWhite, tui.BGBlack)
+				c.WriteStyled(bx+3, by+bh-5, desc, tui.FGWhite, tui.BGBlack)
+			}
+		}
+
+		// Slots d'equipement sous l'inventaire.
+		c.WriteStyled(bx+3, by+equipStart-1, "--- Equipment ---", tui.FGGray, tui.BGBlack)
+		for i, label := range equipLabels {
+			rowY := by + equipStart + i
+			name := "(empty)"
+			if n := equippedName(ch, i); n != "" {
+				name = n
+			}
+			prefix := "  "
+			fg := tui.FGWhite
+			if cursor-len(slots) == i {
+				prefix = "> "
+				fg = tui.FGBrightWhite
+			}
+			c.WriteStyled(bx+3, rowY, prefix+label+": "+name, fg, tui.BGBlack)
+		}
+		// Detail d'une piece equipee selectionnee.
+		if eqIdx := cursor - len(slots); eqIdx >= 0 && eqIdx < len(equipLabels) {
+			if desc := equippedDescription(ch, eqIdx); desc != "" {
+				c.WriteStyled(bx+3, by+bh-5, desc, tui.FGWhite, tui.BGBlack)
 			}
 		}
 
@@ -86,7 +116,7 @@ func RunInventoryMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Ch
 			c.WriteStyled(bx+3, by+bh-3, msg, msgCol, tui.BGBlack)
 		}
 
-		hint := "[↑/↓] Choose [ENTER] Use/Equip [E/ESC] Exit"
+		hint := "[↑/↓] Choose [ENTER] Use/Equip/Unequip [E/ESC] Exit"
 		c.WriteStyled(bx+(bw-len(hint))/2, by+bh-2, hint, tui.FGBrightWhite, tui.BGBlack)
 
 		_ = tui.FlushStyled(out, c)
@@ -104,10 +134,11 @@ func RunInventoryMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Ch
 				cursor--
 			}
 		case tui.KeyDown:
-			if cursor < len(slots)-1 {
+			if cursor < len(ch.Inventory.Slots)+len(equipLabels)-1 {
 				cursor++
 			}
 		case tui.KeyEnter:
+			slots := ch.Inventory.Slots
 			if cursor >= 0 && cursor < len(slots) {
 				target := slots[cursor].Item
 
@@ -160,11 +191,67 @@ func RunInventoryMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Ch
 					continue
 				}
 
+				// 4. Armor (casque, plastron, jambieres, bottes)
+				if e, ok := target.(item.Equipment); ok {
+					ch.EquipArmor(e)
+					msg = "Equipped: " + e.Name() + " (+" + strconv.Itoa(int(e.HPBonus)) + " Max HP)!"
+					msgCol = tui.FGLightGreen
+					continue
+				}
+
 				msg = "Item: " + target.Name() + " (Value: " + strconv.Itoa(int(target.PriceSell())) + " G)"
 				msgCol = tui.FGLightCyan
+			} else if eqIdx := cursor - len(slots); eqIdx >= 0 && eqIdx < len(equipLabels) {
+				// Ligne d'equipement : desequipe vers l'inventaire.
+				if eqIdx < 4 {
+					if ch.UnequipArmor(item.EquipmentSlot(eqIdx)) {
+						msg = "Unequipped " + equipLabels[eqIdx] + "."
+						msgCol = tui.FGLightGreen
+					} else {
+						msg = "Nothing to unequip (or inventory full)."
+						msgCol = tui.FGLightRed
+					}
+				} else {
+					if ch.UnequipWeapon() {
+						msg = "Unequipped weapon."
+						msgCol = tui.FGLightGreen
+					} else {
+						msg = "Nothing to unequip (or inventory full)."
+						msgCol = tui.FGLightRed
+					}
+				}
 			}
 		}
 	}
+}
+
+// equippedName rend le nom porte sur la ligne idx ("" si vide).
+// idx 0..3 = armures (Head/Chest/Legs/Feet), 4 = arme.
+func equippedName(ch *character.Character, idx int) string {
+	if idx < 4 {
+		if e := ch.EquippedArmor[idx]; e != nil {
+			return e.Name()
+		}
+		return ""
+	}
+	if ch.EquippedWeapon != nil {
+		return ch.EquippedWeapon.Name()
+	}
+	return ""
+}
+
+// equippedDescription decrit la piece equipee selectionnee.
+func equippedDescription(ch *character.Character, idx int) string {
+	if idx < 4 {
+		if e := ch.EquippedArmor[idx]; e != nil {
+			return "Armor: +" + strconv.Itoa(int(e.HPBonus)) + " Max HP (" + equipLabels[idx] + ")."
+		}
+		return ""
+	}
+	if ch.EquippedWeapon != nil {
+		return itemDescription(*ch.EquippedWeapon)
+	}
+	return ""
 }
 
 func itemTypeTag(it item.Item) string {
