@@ -17,6 +17,7 @@ const (
 	TileBuilding
 	TileDoor
 	TileFloor
+	TileEnd
 )
 
 // Tile porte aussi une couleur, pour que le rendu tui n'ait qu'à lire

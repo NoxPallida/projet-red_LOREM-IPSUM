@@ -16,6 +16,7 @@ func RunForgeMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Charac
 	cursor := 0
 	msg := ""
 	msgCol := tui.FGLightGreen
+	scroll := 0 // la liste depasse la hauteur : on scrolle (cf. shop)
 
 	bw, bh := 54, 15
 	bx, by := tui.CenteredBox(c.W, c.H, bw, bh)
@@ -35,11 +36,24 @@ func RunForgeMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Charac
 		if cursor < 0 {
 			cursor = 0
 		}
-		for i, recipe := range recipes {
-			rowY := by + 3 + i
-			if rowY >= by+bh-5 {
+		if cursor < scroll {
+			scroll = cursor
+		}
+		// Lignes dispo : de by+3 jusqu'a by+bh-5 exclu (detail+msg+hint en bas).
+		maxRows := by + bh - 5 - (by + 3)
+		if maxRows < 1 {
+			maxRows = 1
+		}
+		if cursor >= scroll+maxRows {
+			scroll = cursor - maxRows + 1
+		}
+		for vi := 0; vi < maxRows; vi++ {
+			i := scroll + vi
+			if i >= len(recipes) {
 				break
 			}
+			recipe := recipes[i]
+			rowY := by + 3 + vi
 			priceStr := strconv.Itoa(int(recipe.Price)) + " G"
 			line := recipe.Result.Name()
 			prefix := "  "
@@ -70,7 +84,7 @@ func RunForgeMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Charac
 		if err != nil {
 			return
 		}
-		if ev.K == tui.KeyEsc || (ev.K == tui.KeyRune && (ev.R == 'q' || ev.R == 'Q')) {
+		if tui.IsQuit(ev) {
 			return
 		}
 		switch ev.K {
