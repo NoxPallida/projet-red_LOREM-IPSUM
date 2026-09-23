@@ -83,6 +83,7 @@ type Character struct {
 	Inventory         inventory.Inventory
 	Chest             inventory.Chest
 	EquippedWeapon    *item.Weapon
+	EquippedArmor     [4]*item.Equipment // indexé par item.SlotHead..SlotFeet, nil = vide
 	KnownSpells       map[string]bool
 }
 
@@ -244,9 +245,75 @@ func (c *Character) GetManaMax() uint16 {
 	return total
 }
 
-// EquipWeapon change l'arme équipée du personnage.
+// EquipWeapon équipe l'arme (retirée de l'inventaire par l'appelant).
+// L'ancienne arme repart dans l'inventaire au lieu d'être perdue.
 func (c *Character) EquipWeapon(w item.Weapon) {
-	c.EquippedWeapon = &w
+	c.ensureInventory()
+	if old := c.EquippedWeapon; old != nil {
+		_ = c.Inventory.AddItem(*old, 1)
+	}
+	cp := w
+	c.EquippedWeapon = &cp
+}
+
+// UnequipWeapon déséquipe l'arme vers l'inventaire.
+// Rend false si vide ou inventaire plein.
+func (c *Character) UnequipWeapon() bool {
+	if c.EquippedWeapon == nil {
+		return false
+	}
+	c.ensureInventory()
+	if err := c.Inventory.AddItem(*c.EquippedWeapon, 1); err != nil {
+		return false
+	}
+	c.EquippedWeapon = nil
+	return true
+}
+
+// EquipArmor équipe une pièce d'armure (slot déterminé par la pièce).
+// L'ancienne pièce repart à l'inventaire, le bonus HP s'applique
+// au max ET au courant (sinon l'équiper à pleine vie ne servirait à rien).
+func (c *Character) EquipArmor(e item.Equipment) {
+	c.ensureInventory()
+	slot := e.Slot
+	if slot < item.SlotHead || slot > item.SlotFeet {
+		return
+	}
+	_ = c.Inventory.RemoveItem(e.Name(), 1)
+	if old := c.EquippedArmor[slot]; old != nil {
+		_ = c.Inventory.AddItem(*old, 1)
+	}
+	cp := e
+	c.EquippedArmor[slot] = &cp
+	c.HpMax += uint16(e.HPBonus)
+	c.Hp += uint16(e.HPBonus)
+}
+
+// UnequipArmor déséquipe un slot vers l'inventaire.
+// Rend false si vide ou inventaire plein. Le bonus HP est retiré
+// (courant clampé au nouveau max).
+func (c *Character) UnequipArmor(slot item.EquipmentSlot) bool {
+	if slot < item.SlotHead || slot > item.SlotFeet {
+		return false
+	}
+	old := c.EquippedArmor[slot]
+	if old == nil {
+		return false
+	}
+	c.ensureInventory()
+	if err := c.Inventory.AddItem(*old, 1); err != nil {
+		return false
+	}
+	if bonus := uint16(old.HPBonus); c.HpMax > bonus {
+		c.HpMax -= bonus
+	} else {
+		c.HpMax = 0
+	}
+	if c.Hp > c.HpMax {
+		c.Hp = c.HpMax
+	}
+	c.EquippedArmor[slot] = nil
+	return true
 }
 
 // LearnSpell satisfait item.Learner (cf. item-effect.go, UseSpellBook) :

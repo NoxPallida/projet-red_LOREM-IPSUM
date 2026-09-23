@@ -13,19 +13,19 @@ import (
 // Pas d'entree = pas de blague (ex : maison sans habitant).
 var punchlines = map[world.ZoneKind][]string{
 	world.ZoneShop: {
-		"Tout est a vendre ici. Meme toi, pour le bon prix.",
-		"Mes potions ? Fraiches du matin. Enfin... du mois dernier.",
-		"Reviens quand tu seras riche. Ou mort, je prends les deux.",
+		"Everything is for sale here. Even you, for the right price.",
+		"My potions? Fresh this morning. Well... last month.",
+		"Come back when you're rich. Or dead, I take both.",
 	},
 	world.ZoneForge: {
-		"Mon enclume a vu passer plus de heros que toi.",
-		"Tu veux du solide ? Arrete de pleurnicher et paie.",
-		"Le fer ne ment jamais. Toi, un peu.",
+		"My anvil has seen more heroes than you.",
+		"Want something sturdy? Stop whining and pay.",
+		"Iron never lies. You, a little.",
 	},
 	world.ZoneGuild: {
-		"La guilde observe tes exploits. Enfin... tes tentatives.",
-		"Un rang se merite. Un cadavre, c'est plus rapide.",
-		"Reviens quand tu auras tue quelque chose d'impressionnant.",
+		"The guild watches your exploits. Well... your attempts.",
+		"A rank must be earned. A corpse is faster.",
+		"Come back when you've killed something impressive.",
 	},
 }
 
