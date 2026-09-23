@@ -102,7 +102,10 @@ func GetQuest(id string) (Quest, bool) {
 	return q, ok
 }
 
-// QuestsForRank renvoie toutes les quêtes d'un rang précis.
+// QuestsForRank renvoie UNIQUEMENT les quêtes du rang précis donné
+// (pas les rangs inférieurs) : c'est la liste que la guilde doit
+// afficher, pour que le joueur ne voie que ce qui correspond à son
+// rang actuel plutôt qu'un cumul de toute sa progression passée.
 func QuestsForRank(rank Rank) []Quest {
 	var out []Quest
 	for _, q := range registeredQuests {
@@ -113,50 +116,22 @@ func QuestsForRank(rank Rank) []Quest {
 	return out
 }
 
-// QuestsAvailable renvoie toutes les quêtes accessibles jusqu'au rang donné.
-func QuestsAvailable(rank Rank) []Quest {
-	var out []Quest
-	for _, q := range registeredQuests {
-		if q.Rank <= rank {
-			out = append(out, q)
-		}
-	}
-	return out
-}
-
-// --- Quêtes définies ---
-// La difficulté monte avec le rang : plus de kills requis, meilleures
-// récompenses. À équilibrer plus finement une fois les monstres définis.
-
-var (
-	QuestRatsF          = NewQuest("rats_f", RankF, "Rat Infestation", "rat", 5, 20, 10)
-	QuestWolvesF        = NewQuest("wolves_f", RankF, "Wolves Outside Town", "wolf", 3, 30, 15)
-	QuestGoblinsF       = NewQuest("goblins_f", RankF, "Goblin Training", "goblin", 3, 25, 12)
-	QuestRatsCaveF      = NewQuest("rats_cave_f", RankF, "Cellar Cleanout", "rat", 8, 35, 18)
-	QuestGoblinMasteryF = NewQuest("goblin_mastery_f", RankF, "Sand Arena Trial", "goblin", 6, 45, 25)
-
-	QuestBoarsE     = NewQuest("boars_e", RankE, "Pest Boars", "boar", 6, 60, 30)
-	QuestWolvesE    = NewQuest("wolves_e", RankE, "Wolf Pack", "wolf", 8, 70, 35)
-	QuestBoarHuntE  = NewQuest("boar_hunt_e", RankE, "Great Boar Hunt", "boar", 10, 85, 45)
-	QuestWolfAlphaE = NewQuest("wolf_alpha_e", RankE, "Alpha Wolf Hunt", "wolf", 12, 100, 50)
-
-	QuestTrollsD = NewQuest("trolls_d", RankD, "Troll Hunt", "troll", 3, 150, 80)
-)
-
 // GuildStatus suit la progression d'UN joueur dans la guilde :
-// son rang actuel, ses quêtes en cours et leur avancement.
+// son rang actuel, ses quêtes en cours et le nombre de fois où
+// chacune a été rendue. Les quêtes sont répétables : TimesCompleted
+// sert de compteur/historique, PAS de verrou empêchant un nouvel accept.
 type GuildStatus struct {
-	Rank            Rank
-	ActiveQuests    map[string]uint8 // questID -> kills enregistrés
-	CompletedQuests map[string]bool
+	Rank           Rank
+	ActiveQuests   map[string]uint8  // questID -> kills enregistrés pour la run en cours
+	TimesCompleted map[string]uint16 // questID -> nombre total de fois rendue
 }
 
 // NewGuildStatus crée un statut de guilde neuf : rang F, aucune quête.
 func NewGuildStatus() *GuildStatus {
 	return &GuildStatus{
-		Rank:            RankF,
-		ActiveQuests:    make(map[string]uint8),
-		CompletedQuests: make(map[string]bool),
+		Rank:           RankF,
+		ActiveQuests:   make(map[string]uint8),
+		TimesCompleted: make(map[string]uint16),
 	}
 }
 
@@ -190,11 +165,12 @@ const (
 	ErrQuestNotFound
 	ErrRankTooLow
 	ErrAlreadyActive
-	ErrAlreadyCompleted
 )
 
 // AcceptQuest permet au joueur de prendre une quête, si son rang le
-// permet. Une quête d'un rang supérieur au sien reste inaccessible.
+// permet. Les quêtes sont répétables : avoir déjà complété une quête
+// par le passé ne bloque plus un nouvel accept, seule une quête DÉJÀ
+// EN COURS (ActiveQuests) empêche de la reprendre en double.
 func AcceptQuest(g *GuildStatus, questID string) AcceptResult {
 	q, ok := GetQuest(questID)
 	if !ok {
@@ -202,9 +178,6 @@ func AcceptQuest(g *GuildStatus, questID string) AcceptResult {
 	}
 	if q.Rank > g.Rank {
 		return ErrRankTooLow
-	}
-	if g.CompletedQuests[questID] {
-		return ErrAlreadyCompleted
 	}
 	if _, active := g.ActiveQuests[questID]; active {
 		return ErrAlreadyActive
@@ -241,9 +214,10 @@ const (
 )
 
 // TurnInQuest verse la récompense au joueur si la quête est bien
-// terminée, puis la retire des quêtes actives. La quête doit être
-// rendue explicitement (pas de récompense automatique dès le dernier kill),
-// pour laisser la main au menu/guilde pour l'interaction avec le joueur.
+// terminée, puis la retire des quêtes actives (elle redevient donc
+// immédiatement disponible pour être acceptée à nouveau : c'est ce
+// qui rend les quêtes répétables). TimesCompleted est incrémenté à
+// titre d'historique/affichage, sans jamais bloquer un futur accept.
 func TurnInQuest(g *GuildStatus, m Member, questID string) TurnInResult {
 	kills, active := g.ActiveQuests[questID]
 	if !active {
@@ -258,6 +232,41 @@ func TurnInQuest(g *GuildStatus, m Member, questID string) TurnInResult {
 	m.EarnMoney(q.RewardMoney)
 
 	delete(g.ActiveQuests, questID)
-	g.CompletedQuests[questID] = true
+	g.TimesCompleted[questID]++
 	return TurnedIn
 }
+
+// --- Quêtes définies ---
+// La difficulté monte avec le rang : plus de kills requis, meilleures
+// récompenses. À équilibrer plus finement une fois les monstres définis.
+var (
+	QuestRatsF          = NewQuest("rats_f", RankF, "Rat Infestation", "rat", 5, 20, 10)
+	QuestKoboldF        = NewQuest("kobold_f", RankF, "Kobolds Outside Town", "kobold", 3, 30, 15)
+	QuestGoblinsF       = NewQuest("goblins_f", RankF, "Goblin Training", "goblin", 3, 25, 12)
+	QuestRatsCaveF      = NewQuest("rats_cave_f", RankF, "Cellar Cleanout", "rat", 8, 35, 18)
+	QuestGoblinMasteryF = NewQuest("goblin_mastery_f", RankF, "Sand Arena Trial", "goblin", 6, 45, 25)
+
+	QuestBoarsE     = NewQuest("boars_e", RankE, "Pest Boars", "boar", 6, 60, 30)
+	QuestWolvesE    = NewQuest("wolves_e", RankE, "Wolf Pack", "wolf", 8, 70, 35)
+	QuestBoarHuntE  = NewQuest("boar_hunt_e", RankE, "Great Boar Hunt", "boar", 10, 85, 45)
+	QuestWolfAlphaE = NewQuest("wolf_alpha_e", RankE, "Alpha Wolf Hunt", "wolf", 12, 100, 50)
+
+	QuestHobgoblinsD = NewQuest("hobgoblins_d", RankD, "Hobgoblin Raiders", "hobgoblin", 8, 130, 65)
+	QuestSkeletonsD  = NewQuest("skeletons_d", RankD, "Restless Bones", "skeleton_warrior", 6, 150, 75)
+	QuestHarpiesD    = NewQuest("harpies_d", RankD, "Cliffside Harpies", "harpy", 7, 145, 70)
+	QuestKoboldNestD = NewQuest("kobold_nest_d", RankD, "Kobold Nest Purge", "kobold", 12, 120, 60)
+
+	QuestTrollsC     = NewQuest("trolls_c", RankC, "Troll Hunt", "troll", 3, 220, 110)
+	QuestOrcsC       = NewQuest("orcs_c", RankC, "Orc Skirmish", "orc", 8, 200, 100)
+	QuestHarpyRoostC = NewQuest("harpy_roost_c", RankC, "Harpy Roost Clearing", "harpy", 12, 240, 120)
+
+	QuestOgresB      = NewQuest("ogres_b", RankB, "Ogre Rampage", "ogre", 4, 380, 190)
+	QuestMinotaursB  = NewQuest("minotaurs_b", RankB, "Labyrinth Minotaurs", "minotaur", 3, 420, 210)
+	QuestOrcWarbandB = NewQuest("orc_warband_b", RankB, "Orc Warband", "orc", 15, 350, 170)
+
+	QuestWyrmsA        = NewQuest("wyrms_a", RankA, "Wyrm Den", "wyrm", 3, 600, 300)
+	QuestMinotaurLordA = NewQuest("minotaur_lord_a", RankA, "Minotaur Lord's Guard", "minotaur", 6, 550, 280)
+
+	QuestWyrmNestS = NewQuest("wyrm_nest_s", RankS, "Wyrm Nest Cleansing", "wyrm", 6, 900, 450)
+	QuestWyvernS   = NewQuest("wyvern_s", RankS, "The Wyvern's Reign", "wyvern", 1, 1500, 700)
+)
