@@ -116,4 +116,5 @@ projet-red_runa/
 ├── docs/moteur.md                # doc moteur + gameplay (clavier, combat, quetes...)
 ├── go.mod                        # module runa, Go 1.27
 └── README.md                     # ce fichier
+gg
 ```
