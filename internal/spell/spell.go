@@ -176,12 +176,12 @@ var (
 	FuriousBlow = NewSpell("furious_blow", "Furious Strike", 2, 0, ObtainByLevel, 1, Dwarf, SubclassDwarfBerserker)
 
 	// Level 10: Advanced skills (mana cost)
-	Slash       = NewSpell("slash", "Simple Slash", 15, 5, ObtainByLevel, 10, Human, SubclassHumanCQC)
-	ArcaneBolt  = NewSpell("arcane_bolt", "Arcane Bolt", 14, 8, ObtainByLevel, 10, Human, SubclassHumanMage)
-	PreciseShot = NewSpell("precise_shot", "Precise Shot", 14, 6, ObtainByLevel, 10, Elf, SubclassElfArcher)
+	Slash       = NewSpell("slash", "Simple Slash", 20, 5, ObtainByLevel, 10, Human, SubclassHumanCQC)
+	ArcaneBolt  = NewSpell("arcane_bolt", "Arcane Bolt", 20, 8, ObtainByLevel, 10, Human, SubclassHumanMage)
+	PreciseShot = NewSpell("precise_shot", "Precise Shot", 20, 6, ObtainByLevel, 10, Elf, SubclassElfArcher)
 	NatureHeal  = NewSpell("nature_heal", "Nature Heal", 0, 12, ObtainByLevel, 10, Elf, SubclassElfSpiritMage)
-	ShieldBash  = NewSpell("shield_bash", "Shield Bash", 15, 5, ObtainByLevel, 10, Dwarf, SubclassDwarfWarrior)
-	RageStrike  = NewSpell("rage_strike", "Rage Strike", 18, 8, ObtainByLevel, 10, Dwarf, SubclassDwarfBerserker)
+	ShieldBash  = NewSpell("shield_bash", "Shield Bash", 20, 5, ObtainByLevel, 10, Dwarf, SubclassDwarfWarrior)
+	RageStrike  = NewSpell("rage_strike", "Rage Strike", 20, 8, ObtainByLevel, 10, Dwarf, SubclassDwarfBerserker)
 
 	// Level 9-50 : Human Mage, la voie la plus fournie en sorts (progression arcanique complète)
 	FrostShard     = NewSpell("frost_shard", "Frost Shard", 24, 12, ObtainByLevel, 9, Human, SubclassHumanMage)
@@ -198,10 +198,10 @@ var (
 	WorldTreesWrath = NewSpell("world_trees_wrath", "World Tree's Wrath", 80, 30, ObtainByLevel, 50, Elf, SubclassElfSpiritMage)
 
 	// Level 20 : un seul sort avancé de plus pour les voies peu magiques
-	CrossCut         = NewSpell("cross_cut", "Cross Cut", 26, 9, ObtainByLevel, 20, Human, SubclassHumanCQC)
-	PiercingArrow    = NewSpell("piercing_arrow", "Piercing Arrow", 25, 9, ObtainByLevel, 20, Elf, SubclassElfArcher)
-	EarthbreakerSlam = NewSpell("earthbreaker_slam", "Earthbreaker Slam", 27, 9, ObtainByLevel, 20, Dwarf, SubclassDwarfWarrior)
-	BloodfuryRampage = NewSpell("bloodfury_rampage", "Bloodfury Rampage", 30, 10, ObtainByLevel, 20, Dwarf, SubclassDwarfBerserker)
+	CrossCut         = NewSpell("cross_cut", "Cross Cut", 40, 9, ObtainByLevel, 20, Human, SubclassHumanCQC)
+	PiercingArrow    = NewSpell("piercing_arrow", "Piercing Arrow", 40, 9, ObtainByLevel, 20, Elf, SubclassElfArcher)
+	EarthbreakerSlam = NewSpell("earthbreaker_slam", "Earthbreaker Slam", 40, 9, ObtainByLevel, 20, Dwarf, SubclassDwarfWarrior)
+	BloodfuryRampage = NewSpell("bloodfury_rampage", "Bloodfury Rampage", 40, 10, ObtainByLevel, 20, Dwarf, SubclassDwarfBerserker)
 
 	// Spells obtained by book
 	Fireball       = NewSpell("fireball", "Fireball", 20, 10, ObtainByBook, 0, ClassAny, SubclassAny)
