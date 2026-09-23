@@ -96,7 +96,7 @@ func enemyGlyph(e *enemies.EnemyInstance) rune {
 	case "minotaur":
 		return 'm'
 	case "wyrm":
-		return 'w'
+		return 'W'
 	case "wyvern":
 		return 'Y'
 	default:
@@ -110,14 +110,34 @@ func enemyColor(e *enemies.EnemyInstance) string {
 	switch e.Template.ID {
 	case "rat":
 		return tui.FGLightYellow
+	case "slime":
+		return tui.FGLightCyan
+	case "goblin":
+		return tui.FGGreen
+	case "kobold":
+		return tui.FGYellow
+	case "hobgoblin":
+		return tui.FGLightGreen
 	case "wolf":
 		return tui.FGLightRed
 	case "boar":
 		return tui.FGRed
+	case "skeleton_warrior":
+		return tui.FGWhite
+	case "harpy":
+		return tui.FGLightCyan
+	case "orc":
+		return tui.FGRed
 	case "troll":
 		return tui.FGMagenta
-	case "goblin":
-		return tui.FGGreen
+	case "ogre":
+		return tui.FGLightMagenta
+	case "minotaur":
+		return tui.FGLightMagenta
+	case "wyrm":
+		return tui.FGMagenta
+	case "wyvern":
+		return tui.FGBrightWhite
 	default:
 		return tui.FGLightRed
 	}
