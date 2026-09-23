@@ -17,6 +17,7 @@ func RunShopMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Charact
 	cursor := 0
 	msg := ""
 	msgCol := tui.FGLightGreen
+	scrollBuy := 0 // la liste d'achat depasse la hauteur : on scrolle
 
 	bw, bh := 54, 15
 	bx, by := tui.CenteredBox(c.W, c.H, bw, bh)
@@ -41,30 +42,50 @@ func RunShopMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Charact
 
 		if mode == 0 {
 			catalog := shop.Catalog
-			if cursor >= len(catalog) {
-				cursor = len(catalog) - 1
+			// Derniere ligne : l'augmentation d'inventaire (pas un item,
+			// donc hors catalogue, cf. shop.BuyInventoryUpgrade).
+			buyLen := len(catalog) + 1
+			if cursor >= buyLen {
+				cursor = buyLen - 1
 			}
 			if cursor < 0 {
 				cursor = 0
 			}
-			for i, entry := range catalog {
-				rowY := by + 3 + i
-				if rowY >= by+bh-3 {
+			if cursor < scrollBuy {
+				scrollBuy = cursor
+			}
+			maxRows := by + bh - 3 - (by + 3)
+			if cursor >= scrollBuy+maxRows {
+				scrollBuy = cursor - maxRows + 1
+			}
+			for vi := 0; vi < maxRows; vi++ {
+				i := scrollBuy + vi
+				if i >= buyLen {
 					break
 				}
-				priceStr := strconv.Itoa(int(entry.Price)) + " G"
-				if entry.Item.Name() == item.HealPotion.Name() && !ch.HasClaimedFreePotion() {
-					priceStr = "FREE"
-				}
-				line := entry.Item.Name()
+				rowY := by + 3 + vi
 				prefix := "  "
 				fg := tui.FGWhite
 				if i == cursor {
 					prefix = "> "
 					fg = tui.FGLightCyan
 				}
-				c.WriteStyled(bx+3, rowY, prefix+line, fg, tui.BGBlack)
-				c.WriteStyled(bx+bw-len(priceStr)-3, rowY, priceStr, tui.FGYellow, tui.BGBlack)
+				if i < len(catalog) {
+					entry := catalog[i]
+					priceStr := strconv.Itoa(int(entry.Price)) + " G"
+					if entry.Item.Name() == item.HealPotion.Name() && !ch.HasClaimedFreePotion() {
+						priceStr = "FREE"
+					}
+					c.WriteStyled(bx+3, rowY, prefix+entry.Item.Name(), fg, tui.BGBlack)
+					c.WriteStyled(bx+bw-len(priceStr)-3, rowY, priceStr, tui.FGYellow, tui.BGBlack)
+				} else {
+					priceStr := strconv.Itoa(int(shop.InventoryUpgradePrice)) + " G"
+					if !ch.CanUpgradeInventory() {
+						priceStr = "MAX"
+					}
+					c.WriteStyled(bx+3, rowY, prefix+"Inventory Upgrade", fg, tui.BGBlack)
+					c.WriteStyled(bx+bw-len(priceStr)-3, rowY, priceStr, tui.FGYellow, tui.BGBlack)
+				}
 			}
 		} else {
 			slots := ch.Inventory.Slots
@@ -120,7 +141,7 @@ func RunShopMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Charact
 				cursor--
 			}
 		case tui.KeyDown:
-			maxLen := len(shop.Catalog)
+			maxLen := len(shop.Catalog) + 1 // +1 : ligne upgrade d'inventaire
 			if mode == 1 {
 				maxLen = len(ch.Inventory.Slots)
 			}
@@ -150,6 +171,21 @@ func RunShopMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Charact
 						msgCol = tui.FGLightRed
 					default:
 						msg = "Cannot buy item"
+						msgCol = tui.FGLightRed
+					}
+				} else if cursor == len(shop.Catalog) {
+					switch shop.BuyInventoryUpgrade(ch) {
+					case shop.Success:
+						msg = "Inventory upgraded!"
+						msgCol = tui.FGLightGreen
+					case shop.ErrUpgradeMaxed:
+						msg = "Upgrade maxed out!"
+						msgCol = tui.FGLightRed
+					case shop.ErrInsufficientMoney:
+						msg = "Not enough gold!"
+						msgCol = tui.FGLightRed
+					default:
+						msg = "Cannot upgrade"
 						msgCol = tui.FGLightRed
 					}
 				}

@@ -136,5 +136,7 @@ var Catalog = []CatalogEntry{
 	{item.StarterAxe, 1},
 	{item.StarterBow, 1},
 	{item.StarterStaff, 1},
-	{InventoryUpgradePrice, 30},
+	// NOTE : pas d'entree "upgrade" ici. Une augmentation d'inventaire
+	// n'est pas un item.Item (pas de Name/MaxStack) : elle passe par
+	// BuyInventoryUpgrade, avec sa propre ligne dans menu/shop.go.
 }
