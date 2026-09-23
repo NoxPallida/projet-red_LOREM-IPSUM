@@ -10,8 +10,10 @@ import (
 )
 
 // RunGuildMenu ouvre le panneau de la guilde par-dessus le rendu intérieur
-// (ne prend pas tout le canvas). Affiche les quêtes du rang, permet d'accepter,
-// de rendre et de demander une promotion de rang.
+// (ne prend pas tout le canvas). Affiche les quêtes du rang courant
+// UNIQUEMENT (pas les rangs inférieurs déjà dépassés), permet d'accepter,
+// de rendre, de recommencer une quête déjà complétée (répétable), et de
+// demander une promotion de rang.
 func RunGuildMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Character, gs *guild.GuildStatus, renderUnder func()) {
 	cursor := 0
 	msg := ""
@@ -30,7 +32,7 @@ func RunGuildMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Charac
 		hdr := "Rank: " + gs.Rank.String() + "   |   Level: " + strconv.Itoa(int(ch.Level()))
 		c.WriteStyled(bx+3, by+1, hdr, tui.FGCyan, tui.BGBlack)
 
-		quests := guild.QuestsAvailable(gs.Rank)
+		quests := guild.QuestsForRank(gs.Rank)
 		if len(quests) == 0 {
 			c.WriteStyled(bx+4, by+4, "(No quests available for this rank)", tui.FGGray, tui.BGBlack)
 		} else {
@@ -70,10 +72,7 @@ func RunGuildMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Charac
 
 				statStr := ""
 				statCol := tui.FGWhite
-				if gs.CompletedQuests[q.ID] {
-					statStr = "[Completed]"
-					statCol = tui.FGGray
-				} else if kills, active := gs.ActiveQuests[q.ID]; active {
+				if kills, active := gs.ActiveQuests[q.ID]; active {
 					if kills >= q.RequiredKills {
 						statStr = "[Ready: ENTER to turn in!]"
 						statCol = tui.FGLightGreen
@@ -81,6 +80,10 @@ func RunGuildMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Charac
 						statStr = "[In progress: " + strconv.Itoa(int(kills)) + "/" + strconv.Itoa(int(q.RequiredKills)) + " " + q.MonsterID + "s]"
 						statCol = tui.FGLightYellow
 					}
+				} else if times := gs.TimesCompleted[q.ID]; times > 0 {
+					// Répétable : complétée par le passé, mais reste acceptable.
+					statStr = "[Available: ENTER to accept] (completed x" + strconv.Itoa(int(times)) + ")"
+					statCol = tui.FGLightCyan
 				} else {
 					statStr = "[Available: ENTER to accept]"
 					statCol = tui.FGLightCyan
@@ -121,6 +124,7 @@ func RunGuildMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Charac
 				case guild.Promoted:
 					msg = "Congratulations! Promoted to Rank " + newRank.String() + "!"
 					msgCol = tui.FGLightGreen
+					cursor = 0 // le rang a changé : la liste affichée change entièrement
 				case guild.ErrLevelTooLow:
 					msg = "Level too low for next rank."
 					msgCol = tui.FGLightRed
@@ -132,10 +136,7 @@ func RunGuildMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Charac
 		case tui.KeyEnter:
 			if cursor >= 0 && cursor < len(quests) {
 				q := quests[cursor]
-				if gs.CompletedQuests[q.ID] {
-					msg = "Quest already completed."
-					msgCol = tui.FGGray
-				} else if kills, active := gs.ActiveQuests[q.ID]; active {
+				if kills, active := gs.ActiveQuests[q.ID]; active {
 					if kills >= q.RequiredKills {
 						res := guild.TurnInQuest(gs, ch, q.ID)
 						if res == guild.TurnedIn {
