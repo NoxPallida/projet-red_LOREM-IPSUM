@@ -4,6 +4,7 @@ import (
 	"os"
 	"strconv"
 
+	"runa/assets"
 	"runa/internal/character"
 	"runa/internal/combat"
 	"runa/internal/enemies"
@@ -121,54 +122,187 @@ func handleCombatInput(cb *combat.Combat, ev tui.Event, screen *combatScreen, cu
 	}
 }
 
-func drawCombat(c *tui.Canvas, cb *combat.Combat, screen combatScreen, cursor int) {
-	tui.DrawBoxWithTitle(c, 0, 0, c.W, c.H, "COMBAT")
+// heroArtFor rend l'art du joueur : toujours hero.txt,
+// quelle que soit la race. Un seul sprite pour tous les heros.
+func heroArtFor(race string) []string {
+	return assets.Art("hero")
+}
 
-	// Ligne joueur : nom, HP, mana.
-	c.Write(2, 2, cb.Player.Name)
-	hp := "HP: " + strconv.Itoa(int(cb.Player.Hp)) + "/" + strconv.Itoa(int(cb.Player.HpMax))
-	c.WriteStyled(2, 3, hp, tui.FGLightRed, "")
-	mana := "Mana: " + strconv.Itoa(int(cb.Player.Mana)) + "/" + strconv.Itoa(int(cb.Player.ManaMax))
-	c.WriteStyled(20, 3, mana, tui.FGCyan, "")
+// drawArt dessine un ascii-art remis a l'echelle pour tenir dans
+// (maxW x maxH) depuis (x, y), centre dans la zone.
+// Si trop grand, on echantillonne (1 rune sur n) au lieu de couper :
+// le sprite reste entier et lisible. Retourne la hauteur dessinee.
+func drawArt(c *tui.Canvas, lines []string, x, y, maxW, maxH int, fg string) int {
+	if maxW <= 0 || maxH <= 0 || len(lines) == 0 {
+		return 0
+	}
+	w := 0
+	for _, ln := range lines {
+		if n := len([]rune(ln)); n > w {
+			w = n
+		}
+	}
+	stepX, stepY := 1, 1
+	for w/stepX > maxW {
+		stepX++
+	}
+	for len(lines)/stepY > maxH {
+		stepY++
+	}
+	sw := (w + stepX - 1) / stepX
+	sh := (len(lines) + stepY - 1) / stepY
+	ox := x + (maxW-sw)/2
+	if ox < x {
+		ox = x
+	}
+	drawn := 0
+	for sy := 0; sy*stepY < len(lines) && drawn < maxH && drawn < sh; sy++ {
+		runes := []rune(lines[sy*stepY])
+		col := 0
+		for i, r := range runes {
+			if i%stepX != 0 {
+				continue
+			}
+			if col >= maxW {
+				break
+			}
+			c.SetStyled(ox+col, y+drawn, r, fg, "")
+			col++
+		}
+		drawn++
+	}
+	return drawn
+}
 
-	// Ligne ennemi.
-	c.Write(2, 5, cb.Enemy.Template.Name+" (Lvl "+strconv.Itoa(int(cb.Enemy.Level))+")")
-	ehp := "HP: " + strconv.Itoa(int(cb.Enemy.HP)) + "/" + strconv.Itoa(int(cb.Enemy.MaxHP))
-	c.WriteStyled(2, 6, ehp, tui.FGLightRed, "")
+// artSize rend la taille finale d'un art remis a l'echelle dans
+// (maxW x maxH), pour le positionner avant de le dessiner
+// (ex : caler le heros en bas de sa zone).
+func artSize(lines []string, maxW, maxH int) (sw, sh int) {
+	if maxW <= 0 || maxH <= 0 || len(lines) == 0 {
+		return 0, 0
+	}
+	w := 0
+	for _, ln := range lines {
+		if n := len([]rune(ln)); n > w {
+			w = n
+		}
+	}
+	stepX, stepY := 1, 1
+	for w/stepX > maxW {
+		stepX++
+	}
+	for len(lines)/stepY > maxH {
+		stepY++
+	}
+	sw = (w + stepX - 1) / stepX
+	sh = (len(lines) + stepY - 1) / stepY
+	if sw > maxW {
+		sw = maxW
+	}
+	if sh > maxH {
+		sh = maxH
+	}
+	return sw, sh
+}
 
-	// Menu / sous-menu.
-	y := 9
+// menuLabels rend les lignes du menu selon l'ecran (sans les dessiner).
+func menuLabels(cb *combat.Combat, screen combatScreen) []string {
 	switch screen {
-	case screenMain:
-		drawMenuList(c, 2, y, []string{"Attack", "Item", "Flee"}, cursor)
 	case screenAttack:
 		opts := combat.AttackOptions(cb.Player)
 		labels := make([]string, len(opts))
 		for i, o := range opts {
 			labels[i] = o.Name + " (" + strconv.Itoa(int(o.Damage)) + " dmg, " + strconv.Itoa(int(o.ManaCost)) + " mana)"
 		}
-		drawMenuList(c, 2, y, labels, cursor)
+		return labels
 	case screenItem:
 		items := combat.AvailableConsumables(cb.Player)
 		if len(items) == 0 {
-			c.Write(2, y, "No items. (Press Enter to go back)")
-		} else {
-			labels := make([]string, len(items))
-			for i, it := range items {
-				labels[i] = it.Name()
-			}
-			drawMenuList(c, 2, y, labels, cursor)
+			return []string{"No items. (Press Enter to go back)"}
 		}
+		labels := make([]string, len(items))
+		for i, it := range items {
+			labels[i] = it.Name()
+		}
+		return labels
+	default:
+		return []string{"Attack", "Item", "Flee"}
 	}
+}
 
-	// Journal de combat : les 4 derniers messages.
-	logY := c.H - 6
-	start := 0
-	if len(cb.Log) > 4 {
-		start = len(cb.Log) - 4
+func drawCombat(c *tui.Canvas, cb *combat.Combat, screen combatScreen, cursor int) {
+	tui.DrawBoxWithTitle(c, 0, 0, c.W, c.H, "COMBAT")
+
+	// Disposition facon Pokemon : ennemi en haut a droite, heros en
+	// bas a gauche (Y decales), menu en boite en bas a gauche,
+	// journal a droite du menu. Les arts sont remis a l'echelle
+	// pour tenir dans leur zone, jamais coupes a l'arrache.
+	labels := menuLabels(cb, screen)
+
+	// Boite d'action en bas a gauche.
+	menuW := 40
+	if menuW > c.W-2 {
+		menuW = c.W - 2
 	}
-	for i, msg := range cb.Log[start:] {
-		c.Write(2, logY+i, msg)
+	if menuW < 10 {
+		menuW = 10
+	}
+	menuH := len(labels) + 2
+	menuTop := c.H - menuH
+	if menuTop < 2 {
+		menuTop = 2
+	}
+	tui.DrawBoxWithTitle(c, 2, menuTop, menuW, menuH, "ACTION")
+	drawMenuList(c, 4, menuTop+1, labels, cursor)
+
+	// Ennemi : nom en haut a droite, art en dessous, PV dessous.
+	mid := c.W / 2
+	enemyMaxW := c.W - 2 - mid
+	if enemyMaxW < 0 {
+		enemyMaxW = 0
+	}
+	enemyMaxH := c.H - 9
+	if enemyMaxH < 0 {
+		enemyMaxH = 0
+	}
+	enemyName := cb.Enemy.Template.Name + " (Lvl " + strconv.Itoa(int(cb.Enemy.Level)) + ")"
+	c.Write(c.W-2-len([]rune(enemyName)), 1, enemyName)
+	enemyH := drawArt(c, assets.Art(cb.Enemy.Template.ID), mid, 2, enemyMaxW, enemyMaxH, tui.FGLightRed)
+	ehp := "HP: " + strconv.Itoa(int(cb.Enemy.HP)) + "/" + strconv.Itoa(int(cb.Enemy.MaxHP))
+	c.WriteStyled(c.W-2-len([]rune(ehp)), 2+enemyH, ehp, tui.FGLightRed, "")
+
+	// Heros : art cale en bas a gauche (au-dessus du menu),
+	// nom au-dessus de l'art, PV/mana en dessous.
+	heroMaxW := mid - 4
+	if heroMaxW < 0 {
+		heroMaxW = 0
+	}
+	heroBottom := menuTop - 1
+	heroMaxH := heroBottom - 5
+	if heroMaxH < 0 {
+		heroMaxH = 0
+	}
+	heroLines := heroArtFor(cb.Player.Class.String())
+	_, heroH := artSize(heroLines, heroMaxW, heroMaxH)
+	heroY := heroBottom - heroH
+	drawArt(c, heroLines, 2, heroY, heroMaxW, heroMaxH, tui.FGCyan)
+	c.Write(2, heroY-1, cb.Player.Name)
+	hp := "HP: " + strconv.Itoa(int(cb.Player.Hp)) + "/" + strconv.Itoa(int(cb.Player.HpMax))
+	c.WriteStyled(2, heroBottom, hp, tui.FGLightRed, "")
+	mana := "Mana: " + strconv.Itoa(int(cb.Player.Mana)) + "/" + strconv.Itoa(int(cb.Player.ManaMax))
+	c.WriteStyled(20, heroBottom, mana, tui.FGCyan, "")
+
+	// Journal de combat : les 4 derniers messages, a droite du menu.
+	logX := 2 + menuW + 2
+	if c.W-2-logX >= 10 {
+		logY := c.H - 5
+		start := 0
+		if len(cb.Log) > 4 {
+			start = len(cb.Log) - 4
+		}
+		for i, msg := range cb.Log[start:] {
+			c.Write(logX, logY+i, msg)
+		}
 	}
 }
 
