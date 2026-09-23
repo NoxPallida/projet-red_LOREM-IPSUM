@@ -71,14 +71,34 @@ func enemyGlyph(e *enemies.EnemyInstance) rune {
 	switch e.Template.ID {
 	case "rat":
 		return 'r'
+	case "slime":
+		return 's'
+	case "goblin":
+		return 'g'
+	case "kobold":
+		return 'k'
+	case "hobgoblin":
+		return 'h'
 	case "wolf":
 		return 'w'
 	case "boar":
 		return 'b'
+	case "skeleton_warrior":
+		return 'S'
+	case "harpy":
+		return 'H'
+	case "orc":
+		return 'o'
 	case "troll":
-		return 'T'
-	case "goblin":
-		return 'g'
+		return 't'
+	case "ogre":
+		return 'O'
+	case "minotaur":
+		return 'm'
+	case "wyrm":
+		return 'w'
+	case "wyvern":
+		return 'Y'
 	default:
 		return 'm'
 	}
