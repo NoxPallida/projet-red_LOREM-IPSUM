@@ -116,7 +116,7 @@ func RunInventoryMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Ch
 			c.WriteStyled(bx+3, by+bh-3, msg, msgCol, tui.BGBlack)
 		}
 
-		hint := "[↑/↓] Choose [ENTER] Use/Equip/Unequip [E/ESC] Exit"
+		hint := "[↑/↓] Choose [ENTER] Action [C] Credits [E] Exit"
 		c.WriteStyled(bx+(bw-len(hint))/2, by+bh-2, hint, tui.FGBrightWhite, tui.BGBlack)
 
 		_ = tui.FlushStyled(out, c)
@@ -129,6 +129,10 @@ func RunInventoryMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Ch
 			return
 		}
 		switch ev.K {
+		case tui.KeyRune:
+			if ev.R == 'c' || ev.R == 'C' {
+				showCredits(in, out, c)
+			}
 		case tui.KeyUp:
 			if cursor > 0 {
 				cursor--
@@ -223,6 +227,21 @@ func RunInventoryMenu(in *os.File, out *os.File, c *tui.Canvas, ch *character.Ch
 			}
 		}
 	}
+}
+
+// showCredits affiche la boite easter-egg des credits par-dessus
+// l'inventaire. N'importe quelle touche la referme et rend la main.
+func showCredits(in *os.File, out *os.File, c *tui.Canvas) {
+	bw, bh := 44, 7
+	bx, by := tui.CenteredBox(c.W, c.H, bw, bh)
+	tui.FillStyled(c, bx, by, bw, bh, ' ', "", tui.BGBlack)
+	tui.DrawBoxWithTitle(c, bx, by, bw, bh, "CREDITS")
+	line := "credit : ABBA et Steven Spielberg"
+	c.WriteStyled(bx+(bw-len(line))/2, by+2, line, tui.FGLightGreen, tui.BGBlack)
+	hint := "[touche] Retour"
+	c.WriteStyled(bx+(bw-len(hint))/2, by+4, hint, tui.FGGray, tui.BGBlack)
+	_ = tui.FlushStyled(out, c)
+	_, _ = tui.ReadKey(in)
 }
 
 // equippedName rend le nom porte sur la ligne idx ("" si vide).
